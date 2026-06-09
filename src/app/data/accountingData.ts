@@ -2,6 +2,9 @@ import type {
   AccountingEntry,
   AccountingProvider,
   AccountingStatus,
+  ConfirmedInvestmentLedger,
+  InvestmentInstrumentType,
+  InvestmentLedgerSuggestion,
   Ledger,
   LedgerLine,
   LedgerMapping,
@@ -78,6 +81,178 @@ export const roleLabels: Record<LedgerRole, string> = {
 
 export const formatMoney = (amount: number) =>
   new Intl.NumberFormat("en-IN", { style: "currency", currency: "INR", maximumFractionDigits: 0 }).format(amount);
+
+export const instrumentTypeLabels: Record<InvestmentInstrumentType, string> = {
+  LIQUID_MUTUAL_FUND: "Liquid MF",
+  OVERNIGHT_MUTUAL_FUND: "Overnight MF",
+  DEBT_MUTUAL_FUND: "Debt MF",
+  FIXED_DEPOSIT: "Fixed Deposit",
+  BOND: "Bond",
+  EQUITY: "Equity",
+  OTHER_INVESTMENT: "Other Investment"
+};
+
+export const formatInstrumentType = (type: InvestmentInstrumentType) => instrumentTypeLabels[type];
+
+export const investmentLedgerSuggestions: InvestmentLedgerSuggestion[] = [
+  {
+    suggestionId: "SUGG-001",
+    ledgerId: "zoho-liquid",
+    ledgerName: "HDFC Liquid Fund - Growth",
+    sourceSystem: "ZOHO_BOOKS",
+    accountType: "other_current_assets",
+    ledgerGroup: "Other Current Assets",
+    parentLedgerGroup: "Assets",
+    closingBalance: 1250000,
+    currencyCode: "INR",
+    suggestedLedgerCategory: "INVESTMENT",
+    suggestedInstrumentType: "LIQUID_MUTUAL_FUND",
+    confidence: "HIGH",
+    confidenceScore: 0.92,
+    reason: "Ledger name contains Liquid Fund and the account type is other current assets.",
+    matchedSignals: ["ledger_name: liquid fund", "account_type: other_current_assets"],
+    reviewStatus: "PENDING_CONFIRMATION",
+    lastSyncedAt: "2026-05-28T12:00:00Z"
+  },
+  {
+    suggestionId: "SUGG-002",
+    ledgerId: "overnight",
+    ledgerName: "Axis Overnight Fund Regular Plan",
+    sourceSystem: "TALLY",
+    accountType: "current_asset",
+    ledgerGroup: "Investments",
+    parentLedgerGroup: "Assets",
+    closingBalance: 2240000,
+    currencyCode: "INR",
+    suggestedLedgerCategory: "INVESTMENT",
+    suggestedInstrumentType: "OVERNIGHT_MUTUAL_FUND",
+    confidence: "HIGH",
+    confidenceScore: 0.89,
+    reason: "Ledger group is Investments and name matches an overnight fund pattern.",
+    matchedSignals: ["ledger_group: investments", "ledger_name: overnight fund"],
+    reviewStatus: "PENDING_CONFIRMATION",
+    lastSyncedAt: "2026-05-28T12:00:00Z"
+  },
+  {
+    suggestionId: "SUGG-003",
+    ledgerId: "kotak-fd",
+    ledgerName: "Kotak Corporate FD 181 Days",
+    sourceSystem: "TALLY",
+    accountType: "fixed_deposit",
+    ledgerGroup: "Deposits",
+    parentLedgerGroup: "Assets",
+    closingBalance: 5000000,
+    currencyCode: "INR",
+    suggestedLedgerCategory: "INVESTMENT",
+    suggestedInstrumentType: "FIXED_DEPOSIT",
+    confidence: "MEDIUM",
+    confidenceScore: 0.74,
+    reason: "Ledger name includes FD and the group is deposits, which needs finance review.",
+    matchedSignals: ["ledger_name: fd", "ledger_group: deposits"],
+    reviewStatus: "PENDING_CONFIRMATION",
+    lastSyncedAt: "2026-05-28T12:00:00Z"
+  },
+  {
+    suggestionId: "SUGG-004",
+    ledgerId: "liquid",
+    ledgerName: "Aditya Birla Sun Life Liquid Fund",
+    sourceSystem: "TALLY",
+    accountType: "current_asset",
+    ledgerGroup: "Investments",
+    parentLedgerGroup: "Assets",
+    closingBalance: 5075000,
+    currencyCode: "INR",
+    suggestedLedgerCategory: "INVESTMENT",
+    suggestedInstrumentType: "LIQUID_MUTUAL_FUND",
+    confidence: "HIGH",
+    confidenceScore: 0.95,
+    reason: "Known fund house name and liquid fund naming pattern.",
+    matchedSignals: ["ledger_name: liquid fund", "known_fund_house: aditya birla"],
+    reviewStatus: "CONFIRMED",
+    lastSyncedAt: "2026-05-27T11:42:00Z",
+    reviewedBy: "A. Mehta",
+    reviewedAt: "2026-05-28T13:00:00Z",
+    notes: "Confirmed during first ERP review."
+  },
+  {
+    suggestionId: "SUGG-005",
+    ledgerId: "debt",
+    ledgerName: "Franklin Pension Plan - Growth",
+    sourceSystem: "TALLY",
+    accountType: "current_asset",
+    ledgerGroup: "Investments",
+    parentLedgerGroup: "Assets",
+    closingBalance: 1800000,
+    currencyCode: "INR",
+    suggestedLedgerCategory: "INVESTMENT",
+    suggestedInstrumentType: "DEBT_MUTUAL_FUND",
+    confidence: "MEDIUM",
+    confidenceScore: 0.68,
+    reason: "Investment ledger group with a pension plan naming pattern.",
+    matchedSignals: ["ledger_group: investments", "ledger_name: pension plan"],
+    reviewStatus: "REJECTED",
+    lastSyncedAt: "2026-05-27T11:42:00Z",
+    reviewedBy: "A. Mehta",
+    reviewedAt: "2026-05-28T13:20:00Z",
+    notes: "Not used for treasury deployment decisions."
+  }
+];
+
+export const confirmedInvestmentLedgersFromSuggestions = (
+  suggestions: InvestmentLedgerSuggestion[]
+): ConfirmedInvestmentLedger[] =>
+  suggestions
+    .filter((suggestion) => suggestion.reviewStatus === "CONFIRMED" || suggestion.reviewStatus === "EDITED")
+    .map((suggestion) => ({
+      investmentLedgerId: `INV-${suggestion.ledgerId}`,
+      ledgerId: suggestion.ledgerId,
+      ledgerName: suggestion.ledgerName,
+      sourceSystem: suggestion.sourceSystem,
+      accountType: suggestion.accountType,
+      ledgerGroup: suggestion.ledgerGroup,
+      investmentInstrumentType: suggestion.selectedInstrumentType ?? suggestion.suggestedInstrumentType,
+      closingBalance: suggestion.closingBalance,
+      currencyCode: suggestion.currencyCode,
+      lastSyncedAt: suggestion.lastSyncedAt,
+      confirmedAt: suggestion.reviewedAt ?? "2026-05-28T13:00:00Z",
+      confirmedBy: suggestion.reviewedBy ?? "A. Mehta",
+      lifecycleStatus: "ACTIVE",
+      reviewSource: "SUGGESTED",
+      notes: suggestion.notes
+    }));
+
+export const confirmedInvestmentBalance = (suggestions: InvestmentLedgerSuggestion[]) =>
+  confirmedInvestmentLedgersFromSuggestions(suggestions).reduce((sum, ledger) => sum + ledger.closingBalance, 0);
+
+export const activeInvestmentLedgersFromSuggestions = confirmedInvestmentLedgersFromSuggestions;
+
+export const activeInvestmentBalance = (ledgers: ConfirmedInvestmentLedger[]) =>
+  ledgers.reduce((sum, ledger) => sum + ledger.closingBalance, 0);
+
+export const providerToSourceSystem = (provider: ProviderName) => (provider === "Tally" ? "TALLY" : "ZOHO_BOOKS");
+
+export const ledgerToManualInvestmentLedger = (
+  ledger: Ledger,
+  investmentInstrumentType: InvestmentInstrumentType,
+  notes: string,
+  confirmedAt = new Date().toISOString()
+): ConfirmedInvestmentLedger => ({
+  investmentLedgerId: `MANUAL-${ledger.id}`,
+  ledgerId: ledger.id,
+  ledgerName: ledger.name,
+  sourceSystem: providerToSourceSystem(ledger.provider),
+  accountType: ledger.group.toLowerCase().replaceAll(" ", "_"),
+  ledgerGroup: ledger.group,
+  investmentInstrumentType,
+  closingBalance: ledger.balance ?? 0,
+  currencyCode: "INR",
+  lastSyncedAt: confirmedAt,
+  confirmedAt,
+  confirmedBy: "A. Mehta",
+  lifecycleStatus: "ACTIVE",
+  reviewSource: "MANUAL",
+  notes
+});
 
 export const ledgerName = (id?: string) => ledgers.find((ledger) => ledger.id === id)?.name ?? "Not mapped";
 

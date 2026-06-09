@@ -1,5 +1,6 @@
 import {
   ArrowLeftRight,
+  Bell,
   BriefcaseBusiness,
   ChevronDown,
   Database,
@@ -25,7 +26,6 @@ export function Layout({
   children: React.ReactNode;
 }) {
   const nav = [
-    { id: "agent", label: "Agent", icon: BriefcaseBusiness },
     { id: "home", label: "Home", icon: Home },
     { id: "portfolio", label: "Portfolio", icon: BriefcaseBusiness },
     { id: "explore", label: "Explore", icon: Search },
@@ -38,26 +38,32 @@ export function Layout({
     <div className="figma-shell">
       <aside className="figma-sidebar">
         <div className="figma-logo">
-          <span>Kodo</span>
-          <strong>North</strong>
-          <button aria-label="Collapse sidebar">‹</button>
+          <span className="figma-logo-mark" />
+          <strong>Platform Name</strong>
         </div>
         <nav className="figma-nav">
           {nav.map((item) => {
             const Icon = item.icon;
             const active = item.id === section;
             return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  if (item.id === "portfolio" || item.id === "transactions" || item.id === "erp") setSection(item.id);
-                }}
-                className={`figma-nav-item ${active ? "active" : ""}`}
-              >
-                <Icon size={20} />
-                <span>{item.label}</span>
-                {"caret" in item && item.caret && <ChevronDown size={16} className="nav-caret" />}
-              </button>
+              <div key={item.id}>
+                <button
+                  onClick={() => {
+                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "erp") setSection(item.id);
+                  }}
+                  className={`figma-nav-item ${active ? "active" : ""}`}
+                >
+                  <Icon size={18} />
+                  <span>{item.label}</span>
+                  {"caret" in item && item.caret && <ChevronDown size={15} className="nav-caret" />}
+                </button>
+                {item.id === "erp" && active && (
+                  <div className="figma-subnav">
+                    <button>Business Accounts</button>
+                    <button className="active">ERP</button>
+                  </div>
+                )}
+              </div>
             );
           })}
         </nav>
@@ -65,11 +71,17 @@ export function Layout({
       <main className="figma-main">
         <header className="figma-topbar">
           <span>Kodo Technologies Private Limited</span>
-          <div className="figma-user">
-            <div className="user-initials">PO</div>
-            <div>
-              <strong>Primary O</strong>
-              <span>Primary Owner</span>
+          <div className="figma-topbar-actions">
+            <button className="notification-button" aria-label="Notifications">
+              <Bell size={22} />
+              <span />
+            </button>
+            <div className="figma-user">
+              <div className="user-initials">AM</div>
+              <div>
+                <strong>A. Mehta</strong>
+                <span>Primary Owner</span>
+              </div>
             </div>
           </div>
         </header>

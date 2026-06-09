@@ -7,7 +7,7 @@ import { PortfolioAccounting } from "./components/PortfolioAccounting";
 import { TransactionsAccounting } from "./components/TransactionsAccounting";
 
 export function App() {
-  const [section, setSection] = useState<Section>("transactions");
+  const [section, setSection] = useState<Section>("erp");
   const [portfolios, setPortfolios] = useState(starterPortfolios);
   const [transactions, setTransactions] = useState(() => starterTransactions(starterPortfolios));
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);

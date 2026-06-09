@@ -1,5 +1,26 @@
 export type ProviderName = "Tally" | "Zoho Books";
 
+export type SourceSystem = "TALLY" | "ZOHO_BOOKS";
+
+export type InvestmentInstrumentType =
+  | "LIQUID_MUTUAL_FUND"
+  | "OVERNIGHT_MUTUAL_FUND"
+  | "DEBT_MUTUAL_FUND"
+  | "FIXED_DEPOSIT"
+  | "BOND"
+  | "EQUITY"
+  | "OTHER_INVESTMENT";
+
+export type InvestmentLedgerReviewStatus =
+  | "PENDING_CONFIRMATION"
+  | "CONFIRMED"
+  | "REJECTED"
+  | "EDITED";
+
+export type InvestmentLedgerLifecycleStatus = "ACTIVE";
+
+export type InvestmentLedgerReviewSource = "SUGGESTED" | "MANUAL";
+
 export type LedgerRole =
   | "investmentAsset"
   | "bank"
@@ -47,6 +68,48 @@ export interface Ledger {
   provider: ProviderName;
   confidence?: "HIGH" | "MEDIUM" | "LOW";
   balance?: number;
+}
+
+export interface InvestmentLedgerSuggestion {
+  suggestionId: string;
+  ledgerId: string;
+  ledgerName: string;
+  sourceSystem: SourceSystem;
+  accountType: string;
+  ledgerGroup: string;
+  parentLedgerGroup: string;
+  closingBalance: number;
+  currencyCode: "INR";
+  suggestedLedgerCategory: "INVESTMENT";
+  suggestedInstrumentType: InvestmentInstrumentType;
+  selectedInstrumentType?: InvestmentInstrumentType;
+  confidence: "HIGH" | "MEDIUM" | "LOW";
+  confidenceScore: number;
+  reason: string;
+  matchedSignals: string[];
+  reviewStatus: InvestmentLedgerReviewStatus;
+  lastSyncedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  notes?: string;
+}
+
+export interface ConfirmedInvestmentLedger {
+  investmentLedgerId: string;
+  ledgerId: string;
+  ledgerName: string;
+  sourceSystem: SourceSystem;
+  accountType: string;
+  ledgerGroup: string;
+  investmentInstrumentType: InvestmentInstrumentType;
+  closingBalance: number;
+  currencyCode: "INR";
+  lastSyncedAt: string;
+  confirmedAt: string;
+  confirmedBy: string;
+  lifecycleStatus: InvestmentLedgerLifecycleStatus;
+  reviewSource: InvestmentLedgerReviewSource;
+  notes?: string;
 }
 
 export type LedgerMapping = Partial<Record<LedgerRole, string>>;
