@@ -9,12 +9,13 @@ import {
   Link2,
   Search,
   Settings,
+  ShieldCheck,
   X
 } from "lucide-react";
 import type { AccountingStatus, Scenario } from "../types/accounting";
 import { scenarioLabels } from "../data/accountingData";
 
-export type Section = "portfolio" | "transactions" | "erp";
+export type Section = "portfolio" | "transactions" | "erp" | "policy";
 
 export function Layout({
   section,
@@ -31,6 +32,7 @@ export function Layout({
     { id: "explore", label: "Explore", icon: Search },
     { id: "transactions", label: "Transactions", icon: ArrowLeftRight },
     { id: "erp", label: "Integrations", icon: Link2, caret: true },
+    { id: "policy", label: "Policy Configuration", icon: ShieldCheck },
     { id: "settings", label: "Settings", icon: Settings }
   ] as const;
 
@@ -49,7 +51,9 @@ export function Layout({
               <div key={item.id}>
                 <button
                   onClick={() => {
-                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "erp") setSection(item.id);
+                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "erp" || item.id === "policy") {
+                      setSection(item.id);
+                    }
                   }}
                   className={`figma-nav-item ${active ? "active" : ""}`}
                 >
