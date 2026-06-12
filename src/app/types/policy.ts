@@ -18,9 +18,16 @@ export interface PolicyEntity {
   status?: string;
 }
 
-export type PreferenceBucket = Record<PreferenceType, PolicyEntity[]>;
+export interface MutualFundPreferenceRule {
+  id: string;
+  ruleType: PreferenceType;
+  amcs: PolicyEntity[];
+  categories: PolicyEntity[];
+  subCategories: PolicyEntity[];
+  funds: PolicyEntity[];
+}
 
-export type PolicyPreferences = Record<PolicyDimension, PreferenceBucket>;
+export type MutualFundPreferenceRules = Record<PreferenceType, MutualFundPreferenceRule[]>;
 
 export interface TreasuryPolicyState {
   policyId: string;
@@ -33,7 +40,7 @@ export interface TreasuryPolicyState {
   overrideReasonRequired: boolean;
   minimumOperatingThresholdAmount: number;
   maximumFundAumPercent: number;
-  preferences: PolicyPreferences;
+  mutualFundPreferenceRules: MutualFundPreferenceRules;
   updatedAt: string;
   updatedBy: string;
 }

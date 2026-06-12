@@ -215,26 +215,44 @@ export const initialTreasuryPolicy: TreasuryPolicyState = {
   maximumFundAumPercent: 20,
   updatedAt: "10 Jun 2026, 10:00 AM",
   updatedBy: "A. Mehta",
-  preferences: {
-    amcs: {
-      exclusive: [],
-      preferred: pick("amcs", ["amc-icici", "amc-hdfc"]),
-      excluded: pick("amcs", ["amc-franklin"])
-    },
-    categories: {
-      exclusive: pick("categories", ["cat-debt"]),
-      preferred: [],
-      excluded: pick("categories", ["cat-equity"])
-    },
-    subCategories: {
-      exclusive: [],
-      preferred: pick("subCategories", ["sub-liquid", "sub-money-market"]),
-      excluded: pick("subCategories", ["sub-credit-risk"])
-    },
-    funds: {
-      exclusive: [],
-      preferred: pick("funds", ["fund-icici-liquid", "fund-axis-overnight"]),
-      excluded: pick("funds", ["fund-franklin-pension"])
-    }
+  mutualFundPreferenceRules: {
+    exclusive: [
+      {
+        id: "rule-exclusive-debt-cash",
+        ruleType: "exclusive",
+        amcs: [],
+        categories: pick("categories", ["cat-debt"]),
+        subCategories: pick("subCategories", ["sub-overnight", "sub-liquid"]),
+        funds: []
+      }
+    ],
+    preferred: [
+      {
+        id: "rule-preferred-liquid-amcs",
+        ruleType: "preferred",
+        amcs: pick("amcs", ["amc-icici", "amc-hdfc"]),
+        categories: [],
+        subCategories: pick("subCategories", ["sub-liquid", "sub-money-market"]),
+        funds: pick("funds", ["fund-icici-liquid", "fund-hdfc-liquid"])
+      }
+    ],
+    excluded: [
+      {
+        id: "rule-excluded-franklin",
+        ruleType: "excluded",
+        amcs: pick("amcs", ["amc-franklin"]),
+        categories: [],
+        subCategories: [],
+        funds: []
+      },
+      {
+        id: "rule-excluded-credit-risk",
+        ruleType: "excluded",
+        amcs: [],
+        categories: [],
+        subCategories: pick("subCategories", ["sub-credit-risk"]),
+        funds: []
+      }
+    ]
   }
 };

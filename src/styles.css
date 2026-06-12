@@ -1017,6 +1017,12 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   line-height: 1.2;
   font-weight: 650;
 }
+.policy-card-title p {
+  margin: 7px 0 0;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  line-height: 1.4;
+}
 .policy-kicker {
   display: inline-flex;
   color: #7a8492;
@@ -1128,7 +1134,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .threshold-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 520px);
   gap: 12px;
   margin-top: 16px;
 }
@@ -1579,6 +1585,366 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   align-items: center;
   flex-shrink: 0;
 }
+.mutual-fund-rules-card {
+  padding: 18px;
+}
+.mf-aum-threshold {
+  margin-top: 14px;
+  max-width: 520px;
+}
+.mf-aum-threshold .threshold-field {
+  background: #fff;
+}
+.mutual-fund-rules-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+}
+.mutual-fund-rules-head h2 {
+  margin: 4px 0 7px;
+  font-size: 19px;
+}
+.mutual-fund-rules-head p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.rule-logic-pills {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.rule-logic-pills span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid #d8e3f4;
+  background: #f7fbff;
+  color: #3a5b87;
+  padding: 0 10px;
+  font-size: 12px;
+  font-weight: 650;
+}
+.rule-section-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.rule-section {
+  border: 1px solid var(--border);
+  background: #fbfbfc;
+  padding: 13px;
+}
+.rule-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+.rule-section-title {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.rule-section-title h3 {
+  margin: 0;
+  font-size: 15px;
+  color: #111827;
+}
+.rule-section-title > span {
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid var(--border);
+  color: #536173;
+  padding: 0 8px;
+  font-size: 11px;
+  font-weight: 650;
+}
+.rule-section-head p {
+  margin: 6px 0 0;
+  color: #6b7280;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.rule-add-control {
+  width: auto;
+  min-width: 106px;
+  flex-shrink: 0;
+  border-style: solid;
+}
+.rule-card-list {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+}
+.rule-empty-state {
+  min-height: 46px;
+  border: 1px dashed #c7ceda;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.rule-card {
+  border: 1px solid var(--border);
+  background: #fff;
+  padding: 12px;
+}
+.rule-card-exclusive {
+  box-shadow: inset 3px 0 0 #6aa7ff;
+}
+.rule-card-preferred {
+  box-shadow: inset 3px 0 0 #45b36b;
+}
+.rule-card-excluded {
+  box-shadow: inset 3px 0 0 #df6565;
+}
+.rule-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.rule-card-top > div:first-child {
+  min-width: 0;
+}
+.rule-card-top strong {
+  display: block;
+  margin-top: 6px;
+  color: #536173;
+  font-size: 12px;
+  font-weight: 650;
+}
+.rule-type-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 0 8px;
+  background: #f4f6f8;
+  color: #374151;
+  font-size: 11px;
+  font-weight: 750;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+}
+.rule-card-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+.icon-button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #536173;
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.icon-button:hover {
+  border-color: #9ec1fb;
+  color: #2f66f3;
+  background: #f7fbff;
+}
+.icon-button.danger:hover {
+  border-color: #efc5c5;
+  color: #c23737;
+  background: #fff7f7;
+}
+.rule-sentence {
+  margin: 10px 0 0;
+  color: #111827;
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.rule-inline-error {
+  margin: 9px 0 0;
+  color: #b42318;
+  background: #fff7f7;
+  border: 1px solid #f2c4c4;
+  padding: 8px 10px;
+  font-size: 12px;
+  line-height: 1.35;
+}
+.rule-builder-panel {
+  margin-top: 12px;
+  border: 1px solid #d9e2ef;
+  background: #f8fbff;
+  padding: 12px;
+}
+.rule-builder-copy {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 11px;
+}
+.rule-builder-copy strong {
+  color: #1f3c61;
+  font-size: 12px;
+}
+.rule-builder-copy span {
+  color: #637184;
+  font-size: 12px;
+}
+.rule-attribute-flow {
+  display: grid;
+  grid-template-columns: minmax(190px, 250px) minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+}
+.rule-attribute-select {
+  display: grid;
+  gap: 7px;
+}
+.rule-attribute-select span,
+.rule-value-selector-head span,
+.rule-selected-condition-head span {
+  color: #111827;
+  font-size: 12px;
+  font-weight: 750;
+}
+.rule-attribute-select select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: #111827;
+  padding: 0 10px;
+  font-size: 13px;
+  outline: 0;
+}
+.rule-value-selector {
+  min-width: 0;
+  border: 1px solid #e2e8f2;
+  background: #fff;
+  padding: 10px;
+}
+.rule-value-selector.active {
+  border-color: #d3e2f8;
+  background: #fbfdff;
+}
+.rule-value-selector-head {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.rule-value-selector-head em,
+.rule-selected-condition-head em {
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.35;
+  font-style: normal;
+}
+.rule-value-disabled {
+  min-height: 78px;
+  border: 1px dashed #c7ceda;
+  background: #fff;
+  display: grid;
+  place-items: center;
+  padding: 12px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+  text-align: center;
+}
+.rule-value-closed {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 122px;
+  gap: 10px;
+  align-items: start;
+}
+.rule-value-chip-preview {
+  min-height: 34px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-content: flex-start;
+}
+.rule-value-open {
+  min-height: 34px;
+}
+.rule-selected-conditions {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+.rule-selected-condition {
+  border: 1px solid #e2e8f2;
+  background: #fff;
+  padding: 10px;
+}
+.rule-selected-condition-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+.rule-selected-condition .selected-chip-list {
+  min-height: 0;
+  margin-bottom: 0;
+}
+.rule-selected-empty {
+  min-height: 40px;
+  border: 1px dashed #c7ceda;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  padding: 0 12px;
+  color: var(--muted-foreground);
+  font-size: 12px;
+}
+.rule-condition-list {
+  display: grid;
+  gap: 8px;
+}
+.rule-condition-row {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr) 96px;
+  align-items: start;
+  gap: 10px;
+  border: 1px solid #e2e8f2;
+  background: #fff;
+  padding: 10px;
+}
+.rule-condition-label span,
+.rule-condition-label em {
+  display: block;
+}
+.rule-condition-label span {
+  color: #111827;
+  font-size: 12px;
+  font-weight: 750;
+}
+.rule-condition-label em {
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  line-height: 1.35;
+  font-style: normal;
+}
+.rule-condition-values {
+  min-width: 0;
+}
+.rule-condition-values .selected-chip-list {
+  min-height: 30px;
+  margin-bottom: 0;
+}
+.rule-field-add {
+  min-height: 30px;
+}
+.rule-picker-panel {
+  margin-top: 8px;
+}
 .risk-profile-wrap {
   padding-top: 3px;
 }
@@ -1726,6 +2092,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
     padding: 12px 16px;
   }
   .policy-save-actions { justify-content: flex-end; }
+  .mutual-fund-rules-head, .rule-section-head { flex-direction: column; align-items: stretch; }
+  .rule-logic-pills { justify-content: flex-start; }
+  .rule-add-control { width: 100%; }
+  .rule-attribute-flow { grid-template-columns: 1fr; }
+  .rule-value-closed { grid-template-columns: 1fr; }
+  .rule-condition-row { grid-template-columns: 1fr; }
+  .rule-field-add { width: 100%; }
   .preference-lane { grid-template-columns: 1fr; }
   .preference-lane .policy-picker-panel { grid-column: auto; }
   .preference-lane-action { grid-template-columns: 42px 1fr; align-items: center; }
@@ -1750,6 +2123,9 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   .treasury-policy-grid { padding-bottom: 205px; }
   .policy-owner-card, .policy-save-actions, .policy-save-actions .figma-primary, .policy-save-actions .figma-secondary { width: 100%; }
   .policy-save-actions { flex-direction: column; align-items: stretch; }
+  .rule-card-top { flex-direction: column; }
+  .rule-card-actions, .rule-card-actions .icon-button { width: 100%; }
+  .rule-card-actions { display: grid; grid-template-columns: repeat(2, 1fr); }
   .policy-metric-item { border-right: 0; border-bottom: 1px solid var(--border); }
   .policy-metric-item:last-child { border-bottom: 0; }
   .preference-column-grid .preference-column:last-child { grid-column: auto; }
