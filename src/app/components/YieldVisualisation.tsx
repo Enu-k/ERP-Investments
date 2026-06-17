@@ -141,6 +141,11 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
   const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
+  const orderedBenchmarkColumns = useMemo(() => {
+    const fixedDepositColumn = benchmarkColumns.find((column) => column.label === "Fixed Deposit");
+    const mutualFundColumns = benchmarkColumns.filter((column) => column.label !== "Fixed Deposit");
+    return fixedDepositColumn ? [fixedDepositColumn, ...mutualFundColumns] : benchmarkColumns;
+  }, [benchmarkColumns]);
 
   useEffect(() => {
     setPage(1);
@@ -259,8 +264,11 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
             <thead>
               <tr>
                 <th className="yield-benchmark-row-head" aria-hidden="true" />
-                {benchmarkColumns.map((column) => (
-                  <th className="yield-benchmark-category-head" key={column.label}>
+                {orderedBenchmarkColumns.map((column) => (
+                  <th
+                    className={`yield-benchmark-category-head${column.label === "Fixed Deposit" ? " yield-benchmark-fixed-deposit" : ""}`}
+                    key={column.label}
+                  >
                     <span>{column.label}</span>
                     <small>{column.description}</small>
                   </th>
@@ -270,11 +278,23 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
             <tbody>
               <tr>
                 <th className="yield-benchmark-row-head">Max returns</th>
-                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-max`} row={column.max} />)}
+                {orderedBenchmarkColumns.map((column) => (
+                  <BenchmarkCell
+                    className={column.label === "Fixed Deposit" ? "yield-benchmark-fixed-deposit" : undefined}
+                    key={`${column.label}-max`}
+                    row={column.max}
+                  />
+                ))}
               </tr>
               <tr>
                 <th className="yield-benchmark-row-head">Min returns</th>
-                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-min`} row={column.min} />)}
+                {orderedBenchmarkColumns.map((column) => (
+                  <BenchmarkCell
+                    className={column.label === "Fixed Deposit" ? "yield-benchmark-fixed-deposit" : undefined}
+                    key={`${column.label}-min`}
+                    row={column.min}
+                  />
+                ))}
               </tr>
             </tbody>
           </table>
@@ -410,10 +430,10 @@ function benchmarkDisplayRowFromYieldRow(row: YieldComparisonRow): BenchmarkDisp
   };
 }
 
-function BenchmarkCell({ row }: { row?: BenchmarkDisplayRow }) {
+function BenchmarkCell({ className, row }: { className?: string; row?: BenchmarkDisplayRow }) {
   if (!row) {
     return (
-      <td>
+      <td className={className}>
         <strong>-</strong>
         <span>Unavailable</span>
       </td>
@@ -421,7 +441,7 @@ function BenchmarkCell({ row }: { row?: BenchmarkDisplayRow }) {
   }
 
   return (
-    <td>
+    <td className={className}>
       <strong>{`~${formatPercent(row.annualisedReturn)}`}</strong>
       <span>{row.label}</span>
     </td>

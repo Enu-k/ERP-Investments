@@ -1323,7 +1323,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .yield-benchmark-table {
   width: 100%;
-  min-width: 1480px;
+  min-width: 1710px;
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -1343,15 +1343,26 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   position: sticky;
   left: 0;
   z-index: 2;
-  width: 160px;
+  width: 150px;
   background: var(--panel);
   box-shadow: 1px 0 0 rgba(0, 0, 0, 0.08);
 }
 .yield-benchmark-card thead .yield-benchmark-row-head {
-  z-index: 3;
+  z-index: 5;
 }
 .yield-benchmark-category-head {
-  width: 188px;
+  width: 220px;
+}
+.yield-benchmark-card .yield-benchmark-fixed-deposit {
+  position: sticky;
+  left: 150px;
+  z-index: 3;
+  width: 220px;
+  background: var(--panel);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.08);
+}
+.yield-benchmark-card thead .yield-benchmark-fixed-deposit {
+  z-index: 4;
 }
 .yield-benchmark-card thead span,
 .yield-benchmark-card thead small,
@@ -1363,7 +1374,11 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   font-size: 14px;
   line-height: 1.28;
   font-weight: 560;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  overflow-wrap: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 .yield-benchmark-card thead small {
   margin-top: 7px;
@@ -1375,7 +1390,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .yield-benchmark-card tbody th {
   height: 112px;
-  padding: 0 24px;
+  padding: 0 22px;
   color: #444;
   font-weight: 430;
 }
@@ -2838,7 +2853,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
     min-width: 760px;
   }
   .yield-benchmark-table {
-    min-width: 1360px;
+    min-width: 1710px;
   }
   .yield-pagination {
     justify-content: flex-start;
