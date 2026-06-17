@@ -30,37 +30,72 @@ const methodologyCopy =
 type SortOrder = "desc" | "asc";
 type CategoryFilter = "All" | InstrumentType;
 type ProviderFilter = "All" | string;
+interface BenchmarkCategoryDefinition {
+  label: string;
+  description: string;
+  instruments: InstrumentType[];
+  dummy?: {
+    min: BenchmarkDisplayRow;
+    max: BenchmarkDisplayRow;
+  };
+}
 
 const categoryOptions: CategoryFilter[] = ["All", "Money Market Fund", "Liquid Mutual Fund", "Overnight Fund", "Fixed Deposit"];
-const mfCategoryGroups = [
+const benchmarkCategoryDefinitions: BenchmarkCategoryDefinition[] = [
   {
-    broadCategory: "Ultra Short-Term Debt Funds",
-    fundCategories: ["Liquid Fund", "Money Market Fund", "Overnight Fund"]
+    label: "Ultra Short Term Funds",
+    description: "Liquid, money market, overnight",
+    instruments: ["Liquid Mutual Fund", "Money Market Fund", "Overnight Fund"]
   },
   {
-    broadCategory: "Debt Duration Funds",
-    fundCategories: ["Dynamic Bond Fund", "Medium Duration Fund", "Medium to Long Duration Fund"]
+    label: "Debt Duration Funds",
+    description: "Dynamic, medium duration",
+    instruments: [],
+    dummy: {
+      max: { annualisedReturn: 0.0785, label: "HDFC Dynamic Bond Fund" },
+      min: { annualisedReturn: 0.0615, label: "ICICI Medium Duration Fund" }
+    }
   },
   {
-    broadCategory: "Equity Funds",
-    fundCategories: ["Contra Fund", "ELSS", "Index Funds", "Large & Mid Cap Fund", "Sectoral / Thematic Fund"]
+    label: "Equity Funds",
+    description: "Contra, ELSS, index, thematic",
+    instruments: [],
+    dummy: {
+      max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
+      min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
+    }
   },
   {
-    broadCategory: "Hybrid Funds",
-    fundCategories: [
-      "Aggressive Hybrid Fund",
-      "Conservative Hybrid Fund",
-      "Dynamic Asset Allocation or Balanced Advantage Fund",
-      "Multi-Asset Allocation Fund"
-    ]
+    label: "Hybrid Funds",
+    description: "Aggressive, conservative, balanced advantage",
+    instruments: [],
+    dummy: {
+      max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
+      min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
+    }
   },
   {
-    broadCategory: "Solution-Oriented Funds",
-    fundCategories: ["Children's Fund", "Retirement Fund"]
+    label: "Solution-Oriented Funds",
+    description: "Children's, retirement",
+    instruments: [],
+    dummy: {
+      max: { annualisedReturn: 0.092, label: "HDFC Retirement Savings Fund" },
+      min: { annualisedReturn: 0.0685, label: "Tata Young Citizens Fund" }
+    }
   },
   {
-    broadCategory: "Other Mutual Funds",
-    fundCategories: ["All", "Not Specified"]
+    label: "Other Mutual Funds",
+    description: "All, not specified",
+    instruments: [],
+    dummy: {
+      max: { annualisedReturn: 0.084, label: "Motilal Oswal Index Fund" },
+      min: { annualisedReturn: 0.056, label: "Not Specified Fund Sample" }
+    }
+  },
+  {
+    label: "Fixed Deposit",
+    description: "-",
+    instruments: ["Fixed Deposit"]
   }
 ];
 
@@ -105,6 +140,7 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
+  const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
 
   useEffect(() => {
     setPage(1);
@@ -218,27 +254,28 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
 
       <section className="yield-category-summary">
         <h2>Top funds by category</h2>
-        <div className="yield-benchmark-card yield-mf-category-card">
-          <table className="yield-mf-category-table">
+        <div className="yield-benchmark-card">
+          <table>
             <thead>
               <tr>
-                <th>Broad Category</th>
-                <th>Fund Categories</th>
+                <th />
+                {benchmarkColumns.map((column) => (
+                  <th key={column.label}>
+                    <span>{column.label}</span>
+                    <small>{column.description}</small>
+                  </th>
+                ))}
               </tr>
             </thead>
             <tbody>
-              {mfCategoryGroups.map((group) => (
-                <tr key={group.broadCategory}>
-                  <th>{group.broadCategory}</th>
-                  <td>
-                    <div className="yield-category-chip-list">
-                      {group.fundCategories.map((category) => (
-                        <span key={category}>{category}</span>
-                      ))}
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              <tr>
+                <th>Max returns</th>
+                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-max`} row={column.max} />)}
+              </tr>
+              <tr>
+                <th>Min returns</th>
+                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-min`} row={column.min} />)}
+              </tr>
             </tbody>
           </table>
         </div>
@@ -336,6 +373,58 @@ function DeploymentOptionRow({ row, tenureDays, onClick }: { row: YieldCompariso
         </div>
       </td>
     </tr>
+  );
+}
+
+interface BenchmarkColumn {
+  label: string;
+  description: string;
+  min?: BenchmarkDisplayRow;
+  max?: BenchmarkDisplayRow;
+}
+
+interface BenchmarkDisplayRow {
+  annualisedReturn: number;
+  label: string;
+}
+
+function buildBenchmarkColumns(rows: YieldComparisonRow[]): BenchmarkColumn[] {
+  return benchmarkCategoryDefinitions.map((definition) => {
+    const sourceRows = rows
+      .filter((row) => definition.instruments.includes(row.instrument) && row.available)
+      .sort((a, b) => getRankingAnnualisedReturn(a) - getRankingAnnualisedReturn(b));
+
+    return {
+      label: definition.label,
+      description: definition.description,
+      min: sourceRows[0] ? benchmarkDisplayRowFromYieldRow(sourceRows[0]) : definition.dummy?.min,
+      max: sourceRows[sourceRows.length - 1] ? benchmarkDisplayRowFromYieldRow(sourceRows[sourceRows.length - 1]) : definition.dummy?.max
+    };
+  });
+}
+
+function benchmarkDisplayRowFromYieldRow(row: YieldComparisonRow): BenchmarkDisplayRow {
+  return {
+    annualisedReturn: row.annualisedReturn ?? 0,
+    label: row.instrument === "Fixed Deposit" ? row.provider : cleanFundName(row.provider || row.name)
+  };
+}
+
+function BenchmarkCell({ row }: { row?: BenchmarkDisplayRow }) {
+  if (!row) {
+    return (
+      <td>
+        <strong>-</strong>
+        <span>Unavailable</span>
+      </td>
+    );
+  }
+
+  return (
+    <td>
+      <strong>{`~${formatPercent(row.annualisedReturn)}`}</strong>
+      <span>{row.label}</span>
+    </td>
   );
 }
 

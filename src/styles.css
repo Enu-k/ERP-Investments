@@ -1370,40 +1370,6 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-benchmark-card td span {
   color: #555;
 }
-.yield-mf-category-card table {
-  min-width: 780px;
-}
-.yield-mf-category-table thead th:first-child,
-.yield-mf-category-table tbody th {
-  width: 280px;
-}
-.yield-mf-category-table tbody th {
-  height: auto;
-  padding: 24px 32px;
-  color: #111827;
-  font-size: 15px;
-  font-weight: 620;
-}
-.yield-mf-category-table td {
-  padding: 18px 32px;
-}
-.yield-category-chip-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-.yield-category-chip-list span {
-  display: inline-flex;
-  align-items: center;
-  min-height: 34px;
-  padding: 7px 12px;
-  border: 1px solid #e6e0d7;
-  background: #fbfaf8;
-  color: #2f2f2f;
-  font-size: 13px;
-  line-height: 1.25;
-  white-space: normal;
-}
 .yield-table-heading {
   display: flex;
   align-items: end;
