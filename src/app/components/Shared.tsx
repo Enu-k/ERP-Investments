@@ -9,6 +9,7 @@ import {
   Link2,
   Search,
   Settings,
+  ShieldCheck,
   X
 } from "lucide-react";
 import type { AccountingStatus, Scenario } from "../types/accounting";
@@ -31,6 +32,7 @@ export function Layout({
     { id: "explore", label: "Explore", icon: Search },
     { id: "transactions", label: "Transactions", icon: ArrowLeftRight },
     { id: "erp", label: "Integrations", icon: Link2, caret: true },
+    { id: "policy", label: "Policy Configuration", icon: ShieldCheck },
     { id: "settings", label: "Settings", icon: Settings }
   ] as const;
 

@@ -3,6 +3,7 @@ import { entryFromScenario, allRequiredLedgers, starterPortfolios, starterTransa
 import type { LedgerRole } from "./types/accounting";
 import { ERPIntegration } from "./components/ERPIntegration";
 import { Layout, type Section } from "./components/Shared";
+import { PolicyConfiguration } from "./components/PolicyConfiguration";
 import { PortfolioAccounting } from "./components/PortfolioAccounting";
 import { TransactionsAccounting } from "./components/TransactionsAccounting";
 import { ExploreFunds, YieldVisualisation } from "./components/YieldVisualisation";
@@ -10,6 +11,7 @@ import { ExploreFunds, YieldVisualisation } from "./components/YieldVisualisatio
 export function App() {
   const [section, setSection] = useState<Section>("explore");
   const [exploreView, setExploreView] = useState<"funds" | "compare">("funds");
+
   const [portfolios, setPortfolios] = useState(starterPortfolios);
   const [transactions, setTransactions] = useState(() => starterTransactions(starterPortfolios));
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
@@ -112,6 +114,7 @@ export function App() {
       )}
       {section === "yield" && <YieldVisualisation />}
       {section === "erp" && <ERPIntegration />}
+      {section === "policy" && <PolicyConfiguration />}
     </Layout>
   );
 }
