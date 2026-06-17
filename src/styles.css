@@ -1319,11 +1319,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   border: 1px solid var(--border);
   background: var(--panel);
   overflow: auto;
+  overscroll-behavior-x: contain;
 }
-.yield-benchmark-card table {
+.yield-benchmark-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 1480px;
   border-collapse: collapse;
+  table-layout: fixed;
 }
 .yield-benchmark-card th,
 .yield-benchmark-card td {
@@ -1332,43 +1334,66 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   vertical-align: middle;
 }
 .yield-benchmark-card thead th {
-  height: 82px;
-  padding: 0 32px;
+  height: 94px;
+  padding: 0 24px;
   font-weight: 450;
   color: #4b4b4b;
 }
-.yield-benchmark-card thead th:first-child,
-.yield-benchmark-card tbody th {
-  width: 150px;
+.yield-benchmark-card .yield-benchmark-row-head {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  width: 160px;
+  background: var(--panel);
+  box-shadow: 1px 0 0 rgba(0, 0, 0, 0.08);
+}
+.yield-benchmark-card thead .yield-benchmark-row-head {
+  z-index: 3;
+}
+.yield-benchmark-category-head {
+  width: 188px;
 }
 .yield-benchmark-card thead span,
 .yield-benchmark-card thead small,
 .yield-benchmark-card td span {
   display: block;
 }
+.yield-benchmark-card thead span {
+  color: #242424;
+  font-size: 14px;
+  line-height: 1.28;
+  font-weight: 560;
+  overflow-wrap: anywhere;
+}
 .yield-benchmark-card thead small {
-  margin-top: 8px;
+  margin-top: 7px;
   color: #777;
-  font-size: 12px;
+  font-size: 11px;
+  line-height: 1.35;
   font-weight: 400;
+  overflow-wrap: anywhere;
 }
 .yield-benchmark-card tbody th {
   height: 112px;
-  padding: 0 34px;
+  padding: 0 24px;
   color: #444;
   font-weight: 430;
 }
 .yield-benchmark-card td {
-  padding: 0 32px;
+  padding: 0 24px;
 }
 .yield-benchmark-card td strong {
   display: block;
-  margin-bottom: 8px;
-  font-size: 18px;
+  margin-bottom: 7px;
+  font-size: 17px;
+  line-height: 1.25;
   font-weight: 700;
 }
 .yield-benchmark-card td span {
   color: #555;
+  font-size: 13px;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
 }
 .yield-table-heading {
   display: flex;
@@ -2809,9 +2834,11 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   .yield-select-menu > button {
     width: 100%;
   }
-  .yield-final-table,
-  .yield-benchmark-card table {
+  .yield-final-table {
     min-width: 760px;
+  }
+  .yield-benchmark-table {
+    min-width: 1360px;
   }
   .yield-pagination {
     justify-content: flex-start;

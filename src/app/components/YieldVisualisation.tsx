@@ -255,12 +255,12 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
       <section className="yield-category-summary">
         <h2>Top funds by category</h2>
         <div className="yield-benchmark-card">
-          <table>
+          <table className="yield-benchmark-table">
             <thead>
               <tr>
-                <th />
+                <th className="yield-benchmark-row-head" aria-hidden="true" />
                 {benchmarkColumns.map((column) => (
-                  <th key={column.label}>
+                  <th className="yield-benchmark-category-head" key={column.label}>
                     <span>{column.label}</span>
                     <small>{column.description}</small>
                   </th>
@@ -269,11 +269,11 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
             </thead>
             <tbody>
               <tr>
-                <th>Max returns</th>
+                <th className="yield-benchmark-row-head">Max returns</th>
                 {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-max`} row={column.max} />)}
               </tr>
               <tr>
-                <th>Min returns</th>
+                <th className="yield-benchmark-row-head">Min returns</th>
                 {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.label}-min`} row={column.min} />)}
               </tr>
             </tbody>
