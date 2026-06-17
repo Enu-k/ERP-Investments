@@ -15,7 +15,7 @@ import {
 import type { AccountingStatus, Scenario } from "../types/accounting";
 import { scenarioLabels } from "../data/accountingData";
 
-export type Section = "portfolio" | "transactions" | "yield" | "erp" | "explore";
+export type Section = "portfolio" | "transactions" | "yield" | "erp" | "explore" | "policy";
 
 export function Layout({
   section,
@@ -51,7 +51,7 @@ export function Layout({
               <div key={item.id}>
                 <button
                   onClick={() => {
-                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "explore" || item.id === "erp") {
+                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "explore" || item.id === "erp" || item.id === "policy") {
                       setSection(item.id);
                     }
                   }}
