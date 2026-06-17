@@ -32,7 +32,37 @@ type CategoryFilter = "All" | InstrumentType;
 type ProviderFilter = "All" | string;
 
 const categoryOptions: CategoryFilter[] = ["All", "Money Market Fund", "Liquid Mutual Fund", "Overnight Fund", "Fixed Deposit"];
-const benchmarkInstruments: InstrumentType[] = ["Money Market Fund", "Liquid Mutual Fund", "Overnight Fund", "Fixed Deposit"];
+const mfCategoryGroups = [
+  {
+    broadCategory: "Ultra Short-Term Debt Funds",
+    fundCategories: ["Liquid Fund", "Money Market Fund", "Overnight Fund"]
+  },
+  {
+    broadCategory: "Debt Duration Funds",
+    fundCategories: ["Dynamic Bond Fund", "Medium Duration Fund", "Medium to Long Duration Fund"]
+  },
+  {
+    broadCategory: "Equity Funds",
+    fundCategories: ["Contra Fund", "ELSS", "Index Funds", "Large & Mid Cap Fund", "Sectoral / Thematic Fund"]
+  },
+  {
+    broadCategory: "Hybrid Funds",
+    fundCategories: [
+      "Aggressive Hybrid Fund",
+      "Conservative Hybrid Fund",
+      "Dynamic Asset Allocation or Balanced Advantage Fund",
+      "Multi-Asset Allocation Fund"
+    ]
+  },
+  {
+    broadCategory: "Solution-Oriented Funds",
+    fundCategories: ["Children's Fund", "Retirement Fund"]
+  },
+  {
+    broadCategory: "Other Mutual Funds",
+    fundCategories: ["All", "Not Specified"]
+  }
+];
 
 export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const [amountInput, setAmountInput] = useState("1,00,000");
@@ -75,7 +105,6 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
-  const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
 
   useEffect(() => {
     setPage(1);
@@ -189,28 +218,27 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
 
       <section className="yield-category-summary">
         <h2>Top funds by category</h2>
-        <div className="yield-benchmark-card">
-          <table>
+        <div className="yield-benchmark-card yield-mf-category-card">
+          <table className="yield-mf-category-table">
             <thead>
               <tr>
-                <th />
-                {benchmarkColumns.map((column) => (
-                  <th key={column.instrument}>
-                    <span>{displayInstrument(column.instrument)}</span>
-                    <small>{isMutualFundInstrument(column.instrument) ? `Last ${tenureDays} days` : "-"}</small>
-                  </th>
-                ))}
+                <th>Broad Category</th>
+                <th>Fund Categories</th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <th>Max returns</th>
-                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.instrument}-max`} row={column.max} />)}
-              </tr>
-              <tr>
-                <th>Min returns</th>
-                {benchmarkColumns.map((column) => <BenchmarkCell key={`${column.instrument}-min`} row={column.min} />)}
-              </tr>
+              {mfCategoryGroups.map((group) => (
+                <tr key={group.broadCategory}>
+                  <th>{group.broadCategory}</th>
+                  <td>
+                    <div className="yield-category-chip-list">
+                      {group.fundCategories.map((category) => (
+                        <span key={category}>{category}</span>
+                      ))}
+                    </div>
+                  </td>
+                </tr>
+              ))}
             </tbody>
           </table>
         </div>
@@ -308,43 +336,6 @@ function DeploymentOptionRow({ row, tenureDays, onClick }: { row: YieldCompariso
         </div>
       </td>
     </tr>
-  );
-}
-
-interface BenchmarkColumn {
-  instrument: InstrumentType;
-  min?: YieldComparisonRow;
-  max?: YieldComparisonRow;
-}
-
-function buildBenchmarkColumns(rows: YieldComparisonRow[]): BenchmarkColumn[] {
-  return benchmarkInstruments.map((instrument) => {
-    const sourceRows = rows
-      .filter((row) => row.instrument === instrument && row.available)
-      .sort((a, b) => getRankingAnnualisedReturn(a) - getRankingAnnualisedReturn(b));
-    return {
-      instrument,
-      min: sourceRows[0],
-      max: sourceRows[sourceRows.length - 1]
-    };
-  });
-}
-
-function BenchmarkCell({ row }: { row?: YieldComparisonRow }) {
-  if (!row) {
-    return (
-      <td>
-        <strong>-</strong>
-        <span>Unavailable</span>
-      </td>
-    );
-  }
-
-  return (
-    <td>
-      <strong>{formatAnnualisedValue(row)}</strong>
-      <span>{row.instrument === "Fixed Deposit" ? row.provider : cleanFundName(row.provider || row.name)}</span>
-    </td>
   );
 }
 
