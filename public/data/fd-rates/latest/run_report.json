@@ -1,0 +1,246 @@
+{
+  "banks": [
+    {
+      "bank_id": "sbi",
+      "bank_name": "State Bank of India",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/sbi.html",
+      "row_count": 7,
+      "source_type": "html",
+      "source_url": "https://sbi.bank.in/web/interest-rates/deposit-rates/retail-domestic-term-deposits",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "bob",
+      "bank_name": "Bank of Baroda",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/bob.html",
+      "row_count": 12,
+      "source_type": "html",
+      "source_url": "https://bankofbaroda.bank.in/interest-rate-and-service-charges/deposits-interest-rates/fixed-deposits-callable-and-non-callable-upto-ten-crores",
+      "status": "success",
+      "warnings": [
+        "Removed 5 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "pnb",
+      "bank_name": "Punjab National Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/pnb.html",
+      "row_count": 58,
+      "source_type": "html",
+      "source_url": "https://pnb.bank.in/interest-rates-deposit.html",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "canara",
+      "bank_name": "Canara Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/canara.html",
+      "row_count": 47,
+      "source_type": "html",
+      "source_url": "https://www.canarabank.bank.in/pages/deposit-interest-rates",
+      "status": "success",
+      "warnings": [
+        "Removed 145 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "union",
+      "bank_name": "Union Bank of India",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/union.html",
+      "row_count": 18,
+      "source_type": "html",
+      "source_url": "https://www.unionbankofindia.bank.in/en/details/rate-of-interest",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "indian",
+      "bank_name": "Indian Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/indian.html",
+      "row_count": 41,
+      "source_type": "html",
+      "source_url": "https://indianbank.bank.in/departments/deposit-rates/",
+      "status": "success",
+      "warnings": [
+        "Removed 17 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "boi",
+      "bank_name": "Bank of India",
+      "error": "https://bankofindia.bank.in/interest-rate/rupee-term-deposit-rate: Could not fetch https://bankofindia.bank.in/interest-rate/rupee-term-deposit-rate: Client error '403 Forbidden' for url 'https://bankofindia.bank.in/interest-rate/rupee-term-deposit-rate'\nFor more information check: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status/403",
+      "raw_path": null,
+      "row_count": 0,
+      "source_type": null,
+      "source_url": null,
+      "status": "failed",
+      "warnings": []
+    },
+    {
+      "bank_id": "bom",
+      "bank_name": "Bank of Maharashtra",
+      "error": "https://bankofmaharashtra.bank.in/domestic-term-deposits: Could not fetch https://bankofmaharashtra.bank.in/domestic-term-deposits: _ssl.c:1011: The handshake operation timed out",
+      "raw_path": null,
+      "row_count": 0,
+      "source_type": null,
+      "source_url": null,
+      "status": "failed",
+      "warnings": []
+    },
+    {
+      "bank_id": "central",
+      "bank_name": "Central Bank of India",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/central.html",
+      "row_count": 68,
+      "source_type": "html",
+      "source_url": "https://centralbank.bank.in/en/interest-rates-on-deposit",
+      "status": "success",
+      "warnings": [
+        "Removed 24 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "iob",
+      "bank_name": "Indian Overseas Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/iob.html",
+      "row_count": 31,
+      "source_type": "html",
+      "source_url": "https://www.iob.bank.in/en/domestic-nro-nre-retail-term-deposit-rates",
+      "status": "success",
+      "warnings": [
+        "Removed 7 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "uco",
+      "bank_name": "UCO Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/uco.html",
+      "row_count": 42,
+      "source_type": "html",
+      "source_url": "https://www.uco.bank.in/en/web/guest/interest-rates-on-deposit-schemes",
+      "status": "success",
+      "warnings": [
+        "Removed 6 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "psb",
+      "bank_name": "Punjab & Sind Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/psb.html",
+      "row_count": 25,
+      "source_type": "html",
+      "source_url": "https://punjabandsind.bank.in/content/interestdom",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "hdfc",
+      "bank_name": "HDFC Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/hdfc.html",
+      "row_count": 43,
+      "source_type": "html",
+      "source_url": "https://www.hdfc.bank.in/fixed-deposit/fd-interest-rate",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "icici",
+      "bank_name": "ICICI Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/icici.json",
+      "row_count": 107,
+      "source_type": "icici_json",
+      "source_url": "https://www.icici.bank.in/content/dam/icicibank-revamp/deposits/fixed-deposits/json/fd-interest-rate.json",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "axis",
+      "bank_name": "Axis Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/axis.html",
+      "row_count": 4,
+      "source_type": "html",
+      "source_url": "https://www.axis.bank.in/deposits/fixed-deposits/fd-interest-rates?cta=footer-our-offerings",
+      "status": "success",
+      "warnings": [
+        "Removed 2 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "kotak",
+      "bank_name": "Kotak Mahindra Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/kotak.html",
+      "row_count": 34,
+      "source_type": "html",
+      "source_url": "https://www.kotak.bank.in/bank/mailers/intrates/get_all_variable_data_latest.php?section=NRO_Term_Deposit",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "indusind",
+      "bank_name": "IndusInd Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/indusind.html",
+      "row_count": 108,
+      "source_type": "html",
+      "source_url": "https://www.indusind.bank.in/in/en/personal/rates.html",
+      "status": "success",
+      "warnings": [
+        "Removed 9 duplicate rows"
+      ]
+    },
+    {
+      "bank_id": "federal",
+      "bank_name": "Federal Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/federal.html",
+      "row_count": 29,
+      "source_type": "html",
+      "source_url": "https://www.federal.bank.in/deposit-rate",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "idfc",
+      "bank_name": "IDFC FIRST Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/idfc.html",
+      "row_count": 18,
+      "source_type": "html",
+      "source_url": "https://www.idfcfirst.bank.in/personal-banking/deposits/fixed-deposit/fd-interest-rates",
+      "status": "success",
+      "warnings": []
+    },
+    {
+      "bank_id": "yes",
+      "bank_name": "YES Bank",
+      "error": null,
+      "raw_path": "data/snapshots/2026-06-08/20260608T181506-5858ab1f/raw/yes.pdf",
+      "row_count": 16,
+      "source_type": "pdf",
+      "source_url": "https://www.yes.bank.in/sites/web/content/published/api/v1.1/assets/CONT4D3CECE7BCE54986A6139BC379CBCE6D/native/interest_rates_on_savings__account.pdf?download=false",
+      "status": "success",
+      "warnings": []
+    }
+  ],
+  "failure_count": 2,
+  "finished_at": "2026-06-08T18:15:52+05:30",
+  "row_count": 708,
+  "run_id": "20260608T181506-5858ab1f",
+  "started_at": "2026-06-08T18:15:06+05:30",
+  "success_count": 18
+}

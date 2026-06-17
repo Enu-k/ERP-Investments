@@ -324,7 +324,7 @@ button:disabled { cursor: not-allowed; opacity: 0.46; }
 .confidence { min-height: 26px; font-size: 12px; font-weight: 700; }
 .confidence-high { background: #eef9f1; color: var(--green); }
 .confidence-medium { background: #fff6e7; color: #b87219; }
-.confidence-low { background: #f3f3f5; color: #676767; }
+.confidence-low { background: #fff0f0; color: #ff4242; }
 .connected { background: #eef9f1; color: var(--green); min-height: 28px; font-size: 13px; font-weight: 650; }
 
 .transactions-title-row {
@@ -681,6 +681,11 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .erp-overview-card > span { color: #8892a3; font-size: 11px; }
 .erp-overview-card > strong { color: #1f2937; font-size: 24px; line-height: 1; font-weight: 650; }
+.erp-card-empty-meta {
+  margin: 7px 0 0;
+  color: #2f2f2f;
+  font-size: 13px;
+}
 .erp-card-bar {
   height: 2px;
   display: grid;
@@ -689,6 +694,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .erp-card-bar i, .erp-card-bar b { display: block; height: 2px; }
 .erp-card-bar i { background: #0a8cff; }
+.erp-card-bar i.bar-green { background: #22a06b; }
 .erp-card-bar b { background: #ff5a1f; }
 .erp-card-bar.investment i { background: #1ca36a; }
 .erp-card-bar.investment b { background: #ffb428; }
@@ -709,9 +715,16 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   display: grid;
   gap: 36px;
 }
-.erp-record-table, .erp-ledger-table, .erp-active-ledger-table { min-width: 1120px; }
-.erp-record-table th, .erp-ledger-table th, .erp-active-ledger-table th { height: 56px; font-size: 13px; }
-.erp-record-table td, .erp-ledger-table td, .erp-active-ledger-table td { height: 92px; font-size: 15px; }
+.erp-record-table, .erp-ledger-table, .erp-active-ledger-table, .erp-investment-list-table, .erp-review-confirm-table { min-width: 1040px; }
+.erp-record-table th, .erp-ledger-table th, .erp-active-ledger-table th, .erp-investment-list-table th, .erp-review-confirm-table th {
+  height: 56px;
+  font-size: 13px;
+}
+.erp-record-table td, .erp-ledger-table td, .erp-active-ledger-table td, .erp-investment-list-table td, .erp-review-confirm-table td {
+  height: 72px;
+  font-size: 15px;
+  vertical-align: middle;
+}
 .erp-record-table td em.erp-overdue {
   display: block;
   margin-top: 9px;
@@ -726,10 +739,127 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   display: flex;
   justify-content: flex-end;
   align-items: center;
-  gap: 30px;
+  gap: 10px;
   padding: 0 22px;
 }
 .erp-pagination button { height: 50px; border: 1px solid var(--border); background: #fff; padding: 0 18px; }
+.erp-pagination span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 2px;
+}
+.erp-pagination .erp-pagination-icon {
+  width: 50px;
+  padding: 0;
+  font-size: 22px;
+}
+.erp-investments-table-card {
+  border: 1px solid var(--border);
+  background: #fff;
+}
+.erp-review-banner {
+  width: 100%;
+  min-height: 56px;
+  border: 0;
+  border-bottom: 1px solid #f4e3c8;
+  background: #fff6e7;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 16px;
+  color: #111;
+  text-align: left;
+}
+.erp-review-banner strong {
+  font-weight: 560;
+}
+.erp-banner-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid #ff9b18;
+  color: #ff9b18;
+  display: inline-grid;
+  place-items: center;
+  font-weight: 650;
+  flex-shrink: 0;
+}
+.erp-investment-list-table th:first-child,
+.erp-investment-list-table td:first-child,
+.erp-review-confirm-table th:first-child,
+.erp-review-confirm-table td:first-child {
+  width: 20%;
+}
+.erp-investment-list-table th:nth-child(2),
+.erp-investment-list-table td:nth-child(2),
+.erp-review-confirm-table th:nth-child(2),
+.erp-review-confirm-table td:nth-child(2) {
+  width: 20%;
+}
+.erp-review-confirm-table th:nth-child(6),
+.erp-review-confirm-table td:nth-child(6) {
+  width: 140px;
+  text-align: center;
+}
+.erp-review-confirm-table th:nth-child(7),
+.erp-review-confirm-table td:nth-child(7) {
+  width: 122px;
+}
+.erp-review-confirm-table td:first-child,
+.erp-investment-list-table td:first-child {
+  font-weight: 520;
+}
+.erp-review-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+.erp-square-action {
+  width: 43px;
+  height: 43px;
+  border: 1px solid var(--border);
+  background: #fff;
+  display: inline-grid;
+  place-items: center;
+  color: #111;
+}
+.erp-square-action:hover {
+  border-color: #b8c3d2;
+  background: #fafafa;
+}
+.erp-review-page {
+  padding-top: 28px;
+}
+.erp-review-page-head {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 34px;
+}
+.erp-review-page-head h1 {
+  margin: 0 0 10px;
+  color: #111827;
+  font-size: 30px;
+  line-height: 1.1;
+  font-weight: 540;
+  letter-spacing: 0;
+}
+.erp-review-page-head p {
+  margin: 0;
+  color: #4d4d4d;
+}
+.erp-back-button {
+  width: 22px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  color: #111;
+  padding: 0;
+  margin-top: 2px;
+}
 .erp-investment-section .section-title { align-items: flex-end; }
 .erp-investment-section .section-title h2 { font-size: 20px; margin-bottom: 7px; }
 .erp-investment-section .section-title p { color: var(--muted-foreground); font-size: 13px; margin: 0; }
@@ -813,6 +943,25 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .erp-empty-state h2 { margin: 4px 0 0; font-size: 30px; line-height: 1.1; font-weight: 520; }
 .erp-empty-state p { max-width: 560px; color: #676767; margin: 0; line-height: 1.55; }
 .erp-empty-state .figma-secondary { min-height: 34px; padding: 0 12px; font-size: 12px; }
+.erp-empty-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.erp-empty-actions .figma-primary,
+.erp-empty-actions .figma-secondary {
+  min-width: 100px;
+}
+.erp-dark-button {
+  background: #050505;
+  color: #fff;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.25);
+}
+.erp-dark-button:hover {
+  background: #111;
+}
 .empty-icon {
   width: 48px;
   height: 48px;
@@ -920,6 +1069,497 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+.yield-methodology {
+  margin: 16px 0 0;
+  color: var(--muted-foreground);
+  font-size: 13px;
+  line-height: 1.45;
+}
+.yield-source-link {
+  color: var(--blue);
+  display: inline-flex;
+  font-size: 13px;
+  margin-top: 8px;
+  text-decoration: none;
+}
+.explore-page,
+.yield-final-page {
+  color: #111827;
+}
+.explore-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 44px;
+}
+.explore-header h1,
+.yield-title-row h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.12;
+  font-weight: 560;
+  letter-spacing: 0;
+}
+.explore-compare-button {
+  width: 230px;
+  height: 56px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  color: #111;
+  font-size: 16px;
+}
+.explore-toolbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 46px;
+}
+.explore-search {
+  width: 380px;
+  height: 56px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  color: #777;
+}
+.explore-search input {
+  border: 0;
+  outline: 0;
+  background: transparent;
+  width: 100%;
+}
+.explore-filters {
+  display: flex;
+  gap: 16px;
+}
+.explore-filters button,
+.yield-select-menu > button,
+.yield-page-size {
+  height: 56px;
+  min-width: 166px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 18px;
+  color: #666;
+}
+.explore-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(250px, 1fr));
+  gap: 24px;
+}
+.explore-fund-card {
+  min-height: 360px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  padding: 26px 24px 22px;
+}
+.explore-card-title {
+  display: flex;
+  gap: 18px;
+  align-items: flex-start;
+}
+.explore-card-title h2 {
+  margin: 2px 0 7px;
+  font-size: 18px;
+  font-weight: 560;
+}
+.explore-card-title span {
+  display: inline-flex;
+  min-height: 22px;
+  align-items: center;
+  background: #f2f2f2;
+  color: #666;
+  padding: 0 7px;
+  font-size: 12px;
+}
+.explore-return {
+  margin-top: 28px;
+  display: flex;
+  align-items: end;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.explore-return > span {
+  flex-basis: 100%;
+  color: #8a91a0;
+  font-size: 13px;
+}
+.explore-return strong {
+  color: #009a6a;
+  font-size: 34px;
+  line-height: 1;
+  font-weight: 650;
+}
+.explore-return button {
+  height: 26px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+.explore-card-metrics {
+  border-top: 1px solid var(--border);
+  margin-top: 26px;
+  padding-top: 22px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.explore-card-metrics span {
+  display: block;
+  color: #8a91a0;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.explore-card-metrics strong {
+  font-size: 17px;
+  font-weight: 560;
+}
+.explore-card-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 38px;
+}
+.explore-card-actions button {
+  height: 42px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+}
+.explore-card-actions button:first-child {
+  background: #f4f1ed;
+}
+.yield-final-hero {
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) auto;
+  gap: 32px;
+  align-items: start;
+  margin-bottom: 72px;
+}
+.yield-title-row {
+  display: flex;
+  gap: 20px;
+  align-items: flex-start;
+}
+.yield-title-row p {
+  margin: 12px 0 0;
+  color: #4f5057;
+  font-size: 16px;
+}
+.yield-back-button {
+  width: 28px;
+  height: 38px;
+  border: 0;
+  background: transparent;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  color: #111827;
+}
+.yield-final-controls {
+  display: flex;
+  align-items: end;
+  gap: 24px;
+}
+.outline-field {
+  position: relative;
+  display: block;
+}
+.outline-field span {
+  position: absolute;
+  left: 13px;
+  top: -8px;
+  background: var(--background);
+  padding: 0 4px;
+  color: #555;
+  font-size: 12px;
+}
+.outline-field input,
+.outline-field select {
+  width: 170px;
+  height: 56px;
+  border: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--panel);
+  padding: 0 15px;
+  color: #222;
+  outline: 0;
+}
+.outline-field.compact input {
+  width: 92px;
+}
+.yield-calculate-button {
+  width: 140px;
+  height: 56px;
+  border: 1px solid #050505;
+  background: #050505;
+  color: #fff;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.24);
+}
+.yield-category-summary {
+  margin-bottom: 46px;
+}
+.yield-category-summary h2,
+.yield-table-heading h2 {
+  margin: 0 0 22px;
+  font-size: 22px;
+  font-weight: 560;
+}
+.yield-benchmark-card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  overflow: auto;
+}
+.yield-benchmark-card table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+.yield-benchmark-card th,
+.yield-benchmark-card td {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: left;
+  vertical-align: middle;
+}
+.yield-benchmark-card thead th {
+  height: 82px;
+  padding: 0 32px;
+  font-weight: 450;
+  color: #4b4b4b;
+}
+.yield-benchmark-card thead th:first-child,
+.yield-benchmark-card tbody th {
+  width: 150px;
+}
+.yield-benchmark-card thead span,
+.yield-benchmark-card thead small,
+.yield-benchmark-card td span {
+  display: block;
+}
+.yield-benchmark-card thead small {
+  margin-top: 8px;
+  color: #777;
+  font-size: 12px;
+  font-weight: 400;
+}
+.yield-benchmark-card tbody th {
+  height: 112px;
+  padding: 0 34px;
+  color: #444;
+  font-weight: 430;
+}
+.yield-benchmark-card td {
+  padding: 0 32px;
+}
+.yield-benchmark-card td strong {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.yield-benchmark-card td span {
+  color: #555;
+}
+.yield-table-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 18px;
+}
+.yield-final-filters {
+  display: flex;
+  gap: 18px;
+}
+.yield-select-menu {
+  position: relative;
+}
+.yield-select-options {
+  position: absolute;
+  top: 56px;
+  right: 0;
+  z-index: 20;
+  width: 248px;
+  max-height: 350px;
+  overflow: auto;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
+}
+.yield-select-options button {
+  width: 100%;
+  min-height: 48px;
+  border: 0;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 22px;
+  color: #111827;
+  text-align: left;
+}
+.yield-select-options button:hover,
+.yield-select-options button.selected {
+  background: #fbfbfc;
+}
+.yield-final-table-card {
+  border: 1px solid var(--border);
+  background: var(--panel);
+  overflow: auto;
+  box-shadow: 0 22px 48px rgba(0, 0, 0, 0.04);
+}
+.yield-final-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+}
+.yield-final-table th {
+  height: 62px;
+  padding: 0 32px;
+  border-bottom: 1px solid var(--border);
+  color: #555;
+  font-size: 14px;
+  font-weight: 440;
+  text-align: left;
+  background: var(--panel);
+}
+.yield-final-table th:nth-child(3),
+.yield-final-table td:nth-child(3) {
+  text-align: right;
+}
+.yield-final-table th button {
+  border: 0;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: inherit;
+  padding: 0;
+}
+.yield-final-table td {
+  height: 96px;
+  padding: 0 32px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+  vertical-align: middle;
+}
+.yield-final-table tbody tr {
+  cursor: pointer;
+}
+.yield-final-table tbody tr:hover td {
+  background: #fbfbfc;
+}
+.yield-empty-row {
+  color: var(--muted-foreground);
+  text-align: center !important;
+}
+.yield-fund-name-cell {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+.yield-fund-name-cell strong,
+.yield-fund-name-cell span {
+  display: block;
+}
+.yield-fund-name-cell strong {
+  max-width: 520px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #050505;
+  font-size: 16px;
+  font-weight: 560;
+}
+.yield-fund-name-cell span {
+  margin-top: 8px;
+  color: #555;
+  font-size: 13px;
+}
+.yield-rate-stack {
+  display: grid;
+  gap: 12px;
+  justify-items: end;
+}
+.yield-rate-stack strong {
+  font-size: 16px;
+  font-weight: 700;
+}
+.yield-rate-stack span {
+  color: #1f2937;
+  font-size: 12px;
+}
+.yield-instrument-pill {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  border: 1px solid var(--border);
+  background: #fbfbfc;
+  padding: 0 10px;
+  color: #4f5057;
+  font-size: 13px;
+  white-space: nowrap;
+}
+.yield-logo {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 750;
+}
+.yield-logo-bank {
+  border-radius: 0;
+  background: #17396f;
+}
+.yield-logo-red {
+  border-radius: 0;
+  background: #ee2b3a;
+}
+.yield-logo-blue {
+  background: #18aee5;
+}
+.yield-logo-magenta {
+  background: #b1125c;
+}
+.yield-pagination {
+  min-height: 100px;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 34px;
+  padding: 22px 28px;
+}
+.yield-pagination > button:not(.yield-page-size) {
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--border);
+  background: var(--panel);
+  display: grid;
+  place-items: center;
+}
+.yield-pagination span {
+  color: #111;
+}
+.yield-page-size {
+  color: #111;
+  min-width: 168px;
+}
+
 @media (max-width: 1100px) {
   .figma-shell { display: block; }
   .figma-sidebar { width: 100%; border-right: 0; }
@@ -932,6 +1572,25 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   .mapping-control { grid-template-columns: 1fr; }
   .erp-page-head { flex-direction: column; align-items: stretch; }
   .erp-sync-button { width: 100%; }
+  .explore-toolbar,
+  .yield-final-hero,
+  .yield-table-heading {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+    flex-direction: column;
+  }
+  .explore-search,
+  .explore-compare-button {
+    width: 100%;
+  }
+  .explore-filters,
+  .yield-final-controls,
+  .yield-final-filters {
+    flex-wrap: wrap;
+  }
+  .explore-card-grid {
+    grid-template-columns: repeat(2, minmax(240px, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -945,4 +1604,28 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   .figma-topbar-actions, .figma-user { width: 100%; }
   .erp-card-meta, .erp-investment-section .section-title { flex-direction: column; align-items: flex-start; }
   .erp-review-actions { grid-template-columns: 1fr; }
+  .explore-card-grid {
+    grid-template-columns: 1fr;
+  }
+  .explore-filters,
+  .yield-final-controls,
+  .yield-final-filters {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+  .outline-field input,
+  .outline-field select,
+  .yield-calculate-button,
+  .yield-select-menu > button {
+    width: 100%;
+  }
+  .yield-final-table,
+  .yield-benchmark-card table {
+    min-width: 760px;
+  }
+  .yield-pagination {
+    justify-content: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
 }

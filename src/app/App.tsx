@@ -5,9 +5,11 @@ import { ERPIntegration } from "./components/ERPIntegration";
 import { Layout, type Section } from "./components/Shared";
 import { PortfolioAccounting } from "./components/PortfolioAccounting";
 import { TransactionsAccounting } from "./components/TransactionsAccounting";
+import { ExploreFunds, YieldVisualisation } from "./components/YieldVisualisation";
 
 export function App() {
-  const [section, setSection] = useState<Section>("erp");
+  const [section, setSection] = useState<Section>("explore");
+  const [exploreView, setExploreView] = useState<"funds" | "compare">("funds");
   const [portfolios, setPortfolios] = useState(starterPortfolios);
   const [transactions, setTransactions] = useState(() => starterTransactions(starterPortfolios));
   const [selectedPortfolioId, setSelectedPortfolioId] = useState<string | null>(null);
@@ -101,6 +103,14 @@ export function App() {
           onUpdateLine={updateTransactionLine}
         />
       )}
+      {section === "explore" && (
+        exploreView === "compare" ? (
+          <YieldVisualisation onBack={() => setExploreView("funds")} />
+        ) : (
+          <ExploreFunds onCompareYield={() => setExploreView("compare")} />
+        )
+      )}
+      {section === "yield" && <YieldVisualisation />}
       {section === "erp" && <ERPIntegration />}
     </Layout>
   );

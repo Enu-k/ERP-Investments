@@ -1,4 +1,4 @@
-import { Check, ClipboardList, Eye, Plus, RefreshCw, Search, X } from "lucide-react";
+import { ArrowLeft, Check, Plus, RefreshCw, Search, X } from "lucide-react";
 import { useMemo, useState } from "react";
 import {
   activeInvestmentBalance,
@@ -10,10 +10,28 @@ import {
   ledgerToManualInvestmentLedger,
   ledgers
 } from "../data/accountingData";
-import type { ConfirmedInvestmentLedger, InvestmentInstrumentType, InvestmentLedgerSuggestion, Ledger } from "../types/accounting";
+import type {
+  ConfirmedInvestmentLedger,
+  InvestmentInstrumentType,
+  InvestmentLedgerSuggestion,
+  Ledger,
+  SourceSystem
+} from "../types/accounting";
 import { EmptyIcon, HeaderTabs, Sheet } from "./Shared";
 
-type ErpTab = "Payables" | "Receivables" | "Investment Ledgers";
+type ErpTab = "Payables" | "Receivables" | "Investments";
+type InvestmentView = "dashboard" | "review";
+
+interface InvestmentListingRow {
+  id: string;
+  ledgerId: string;
+  ledgerName: string;
+  ledgerGroup: string;
+  instrumentType: InvestmentInstrumentType;
+  sourceSystem: SourceSystem;
+  closingBalance: number;
+  order: number;
+}
 
 const payables = [
   {
@@ -46,14 +64,28 @@ const payables = [
   }
 ];
 
+const syncedOnlyInvestments: InvestmentListingRow[] = [
+  {
+    id: "synced-icici-balanced-fund",
+    ledgerId: "icici-balanced-fund",
+    ledgerName: "ICICI Balanced Fund",
+    ledgerGroup: "Mixed Assets",
+    instrumentType: "HYBRID_MUTUAL_FUND",
+    sourceSystem: "TALLY",
+    closingBalance: 8150,
+    order: 4
+  }
+];
+
 const instrumentOptions = Object.keys(instrumentTypeLabels) as InvestmentInstrumentType[];
 
 export function ERPIntegration() {
-  const [activeTab, setActiveTab] = useState<ErpTab>("Investment Ledgers");
+  const [activeTab, setActiveTab] = useState<ErpTab>("Investments");
+  const [investmentView, setInvestmentView] = useState<InvestmentView>("dashboard");
+  const [investmentsSynced, setInvestmentsSynced] = useState(false);
   const [suggestions, setSuggestions] = useState<InvestmentLedgerSuggestion[]>(investmentLedgerSuggestions);
   const [refreshing, setRefreshing] = useState(false);
-  const [lastSyncedAt, setLastSyncedAt] = useState("28 May 2026, 12:00 PM");
-  const [selectedSuggestionId, setSelectedSuggestionId] = useState<string | null>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState("Not synced yet");
   const [manualLedgers, setManualLedgers] = useState<ConfirmedInvestmentLedger[]>([]);
   const [manualSheetOpen, setManualSheetOpen] = useState(false);
 
@@ -62,12 +94,56 @@ export function ERPIntegration() {
     const suggestedIds = new Set(suggestedActiveLedgers.map((ledger) => ledger.ledgerId));
     return [...suggestedActiveLedgers, ...manualLedgers.filter((ledger) => !suggestedIds.has(ledger.ledgerId))];
   }, [manualLedgers, suggestedActiveLedgers]);
-  const pendingSuggestions = suggestions.filter((suggestion) => suggestion.reviewStatus === "PENDING_CONFIRMATION");
-  const selectedSuggestion = suggestions.find((suggestion) => suggestion.suggestionId === selectedSuggestionId);
-  const activeBalance = activeInvestmentBalance(activeLedgers);
-  const payableBalance = payables.reduce((sum, payable) => sum + payable.balancePayable, 0);
+  const pendingSuggestions = useMemo(
+    () => suggestions.filter((suggestion) => suggestion.reviewStatus === "PENDING_CONFIRMATION"),
+    [suggestions]
+  );
+  const investmentBalance = activeInvestmentBalance(activeLedgers);
+  const syncedInvestmentRows = useMemo(() => {
+    if (!investmentsSynced) return [];
 
-  function refreshSuggestions() {
+    const activeRows = activeLedgers.map((ledger, index) => ({
+      id: ledger.investmentLedgerId,
+      ledgerId: ledger.ledgerId,
+      ledgerName: ledger.ledgerName,
+      ledgerGroup: ledger.ledgerGroup,
+      instrumentType: ledger.investmentInstrumentType,
+      sourceSystem: ledger.sourceSystem,
+      closingBalance: ledger.closingBalance,
+      order: orderForLedger(ledger.ledgerId, index + 10)
+    }));
+    const pendingRows = pendingSuggestions.map((suggestion, index) => ({
+      id: suggestion.suggestionId,
+      ledgerId: suggestion.ledgerId,
+      ledgerName: suggestion.ledgerName,
+      ledgerGroup: suggestion.ledgerGroup,
+      instrumentType: suggestion.selectedInstrumentType ?? suggestion.suggestedInstrumentType,
+      sourceSystem: suggestion.sourceSystem,
+      closingBalance: suggestion.closingBalance,
+      order: orderForLedger(suggestion.ledgerId, index)
+    }));
+    const usedLedgerIds = new Set([...activeRows, ...pendingRows].map((row) => row.ledgerId));
+    return [...pendingRows, ...activeRows, ...syncedOnlyInvestments.filter((row) => !usedLedgerIds.has(row.ledgerId))].sort(
+      (left, right) => left.order - right.order
+    );
+  }, [activeLedgers, investmentsSynced, pendingSuggestions]);
+
+  function syncInvestments() {
+    setActiveTab("Investments");
+    setInvestmentView("dashboard");
+    setRefreshing(true);
+    window.setTimeout(() => {
+      setInvestmentsSynced(true);
+      setLastSyncedAt("Just now");
+      setRefreshing(false);
+    }, 650);
+  }
+
+  function refreshCurrentTab() {
+    if (activeTab === "Investments") {
+      syncInvestments();
+      return;
+    }
     setRefreshing(true);
     window.setTimeout(() => {
       setLastSyncedAt("Just now");
@@ -75,28 +151,22 @@ export function ERPIntegration() {
     }, 650);
   }
 
-  function reviewSuggestion(
-    suggestionId: string,
-    action: "CONFIRM" | "REJECT" | "EDIT_AND_CONFIRM",
-    investmentInstrumentType?: InvestmentInstrumentType,
-    notes?: string
-  ) {
+  function reviewSuggestion(suggestionId: string, action: "CONFIRM" | "REJECT") {
+    const shouldReturnToDashboard = pendingSuggestions.length <= 1;
     setSuggestions((current) =>
       current.map((suggestion) => {
         if (suggestion.suggestionId !== suggestionId) return suggestion;
-        const selectedInstrumentType = investmentInstrumentType ?? suggestion.suggestedInstrumentType;
-
         return {
           ...suggestion,
-          selectedInstrumentType,
-          reviewStatus: action === "REJECT" ? "REJECTED" : action === "EDIT_AND_CONFIRM" ? "EDITED" : "CONFIRMED",
+          selectedInstrumentType: suggestion.selectedInstrumentType ?? suggestion.suggestedInstrumentType,
+          reviewStatus: action === "REJECT" ? "REJECTED" : "CONFIRMED",
           reviewedBy: "A. Mehta",
           reviewedAt: new Date().toISOString(),
-          notes
+          notes: action === "REJECT" ? "Rejected during investment ledger review." : "Confirmed during investment ledger review."
         };
       })
     );
-    setSelectedSuggestionId(null);
+    if (shouldReturnToDashboard) setInvestmentView("dashboard");
   }
 
   function addManualLedger(ledger: Ledger, investmentInstrumentType: InvestmentInstrumentType, notes: string) {
@@ -112,12 +182,28 @@ export function ERPIntegration() {
               reviewStatus: "REJECTED",
               reviewedBy: "A. Mehta",
               reviewedAt: new Date().toISOString(),
-              notes: "Handled through manual active ledger mapping."
+              notes: "Handled through manual investment ledger mapping."
             }
           : suggestion
       )
     );
+    setInvestmentsSynced(true);
+    setActiveTab("Investments");
+    setInvestmentView("dashboard");
     setManualSheetOpen(false);
+  }
+
+  if (activeTab === "Investments" && investmentView === "review") {
+    return (
+      <div className="erp-dashboard">
+        <ReviewInvestmentsPage
+          pendingSuggestions={pendingSuggestions}
+          onBack={() => setInvestmentView("dashboard")}
+          onConfirm={(suggestion) => reviewSuggestion(suggestion.suggestionId, "CONFIRM")}
+          onReject={(suggestion) => reviewSuggestion(suggestion.suggestionId, "REJECT")}
+        />
+      </div>
+    );
   }
 
   return (
@@ -127,7 +213,7 @@ export function ERPIntegration() {
           <h1>ERP</h1>
           <p>Last synced {lastSyncedAt}</p>
         </div>
-        <button className="figma-secondary erp-sync-button" onClick={refreshSuggestions} disabled={refreshing}>
+        <button className="figma-secondary erp-sync-button" onClick={refreshCurrentTab} disabled={refreshing}>
           <RefreshCw size={17} className={refreshing ? "spin" : ""} />
           {refreshing ? "Syncing" : "Sync"}
         </button>
@@ -136,54 +222,49 @@ export function ERPIntegration() {
       <div className="erp-overview-grid">
         <OverviewCard
           label="Total Payables"
-          value={formatMoney(payableBalance)}
-          primaryMeta={`Current - ${formatMoney(payableBalance - 12000 > 0 ? payableBalance - 12000 : payableBalance)}`}
-          secondaryMeta="Overdue - ₹12,000"
+          value={investmentsSynced ? "₹50,830" : "₹0"}
+          primaryMeta={investmentsSynced ? "Current - ₹12,01,100" : undefined}
+          secondaryMeta={investmentsSynced ? "Overdue - ₹12,000" : undefined}
+          emptyMeta={!investmentsSynced ? "No outstanding payables" : undefined}
+          currentTone={investmentsSynced ? "green" : "blue"}
         />
-        <OverviewCard label="Total Receivables" value="₹0" primaryMeta="Current - ₹0" secondaryMeta="Overdue - ₹0" />
         <OverviewCard
-          label="Confirmed Investments"
-          value={formatMoney(activeBalance)}
-          primaryMeta={`${activeLedgers.length} active`}
-          secondaryMeta={`${pendingSuggestions.length} pending review`}
-          investment
+          label="Total Receivables"
+          value={investmentsSynced ? "₹50,830" : "₹0"}
+          primaryMeta={investmentsSynced ? "Current - ₹12,01,100" : undefined}
+          secondaryMeta={investmentsSynced ? "Overdue - ₹12,000" : undefined}
+          emptyMeta={!investmentsSynced ? "No outstanding receivables" : undefined}
+          currentTone={investmentsSynced ? "green" : "blue"}
+        />
+        <OverviewCard
+          label="Total Investments"
+          value={formatMoney(investmentBalance)}
+          primaryMeta={investmentsSynced && investmentBalance > 0 ? `Current - ${formatMoney(investmentBalance)}` : undefined}
+          secondaryMeta={investmentsSynced && investmentBalance > 0 ? "Overdue - ₹0" : undefined}
+          emptyMeta={!investmentsSynced || investmentBalance === 0 ? "No investments available" : undefined}
         />
       </div>
 
-      <HeaderTabs
-        tabs={["Payables", "Receivables", "Investment Ledgers"]}
-        active={activeTab}
-        onChange={(tab) => setActiveTab(tab as ErpTab)}
-      />
+      <HeaderTabs tabs={["Payables", "Receivables", "Investments"]} active={activeTab} onChange={(tab) => setActiveTab(tab as ErpTab)} />
 
       {activeTab === "Payables" && <PayablesTable />}
       {activeTab === "Receivables" && (
         <DashboardEmptyState
           title="No receivables yet"
           copy="Invoices you've sent to customers will appear here once created or imported. Track what's owed to you in one place."
-          action="Sync"
-          onAction={refreshSuggestions}
+          primaryAction="Sync"
+          onPrimaryAction={refreshCurrentTab}
         />
       )}
-      {activeTab === "Investment Ledgers" && (
-        <InvestmentLedgerReview
-          activeLedgers={activeLedgers}
-          pendingSuggestions={pendingSuggestions}
-          onOpenReview={setSelectedSuggestionId}
-          onConfirm={(suggestion) => reviewSuggestion(suggestion.suggestionId, "CONFIRM")}
-          onReject={(suggestion) => reviewSuggestion(suggestion.suggestionId, "REJECT", undefined, "Rejected from dashboard table.")}
-          onRefresh={refreshSuggestions}
-          onAddLedger={() => setManualSheetOpen(true)}
-        />
-      )}
-
-      {selectedSuggestion && (
-        <InvestmentLedgerSheet
-          suggestion={selectedSuggestion}
-          onClose={() => setSelectedSuggestionId(null)}
-          onConfirm={(type, notes) => reviewSuggestion(selectedSuggestion.suggestionId, "CONFIRM", type, notes)}
-          onEditAndConfirm={(type, notes) => reviewSuggestion(selectedSuggestion.suggestionId, "EDIT_AND_CONFIRM", type, notes)}
-          onReject={(notes) => reviewSuggestion(selectedSuggestion.suggestionId, "REJECT", undefined, notes)}
+      {activeTab === "Investments" && (
+        <InvestmentsDashboard
+          synced={investmentsSynced}
+          refreshing={refreshing}
+          rows={syncedInvestmentRows}
+          pendingCount={pendingSuggestions.length}
+          onSync={syncInvestments}
+          onAddManual={() => setManualSheetOpen(true)}
+          onOpenReview={() => setInvestmentView("review")}
         />
       )}
 
@@ -203,26 +284,32 @@ function OverviewCard({
   value,
   primaryMeta,
   secondaryMeta,
-  investment
+  emptyMeta,
+  currentTone = "blue"
 }: {
   label: string;
   value: string;
-  primaryMeta: string;
-  secondaryMeta: string;
-  investment?: boolean;
+  primaryMeta?: string;
+  secondaryMeta?: string;
+  emptyMeta?: string;
+  currentTone?: "blue" | "green";
 }) {
   return (
     <article className="erp-overview-card">
       <span>{label}</span>
       <strong>{value}</strong>
-      <div className={`erp-card-bar ${investment ? "investment" : ""}`}>
-        <i />
+      <div className="erp-card-bar">
+        <i className={currentTone === "green" ? "bar-green" : ""} />
         <b />
       </div>
-      <div className="erp-card-meta">
-        <span><i className="dot-blue" />{primaryMeta}</span>
-        <span><i className={investment ? "dot-green" : "dot-orange"} />{secondaryMeta}</span>
-      </div>
+      {emptyMeta ? (
+        <p className="erp-card-empty-meta">{emptyMeta}</p>
+      ) : (
+        <div className="erp-card-meta">
+          <span><i className={currentTone === "green" ? "dot-green" : "dot-blue"} />{primaryMeta}</span>
+          <span><i className="dot-orange" />{secondaryMeta}</span>
+        </div>
+      )}
     </article>
   );
 }
@@ -259,273 +346,148 @@ function PayablesTable() {
           ))}
         </tbody>
       </table>
-      <div className="erp-pagination">
-        <button>10 Per Page</button>
-        <span>Page 1 of 1</span>
-      </div>
+      <PaginationFooter />
     </div>
   );
 }
 
-function InvestmentLedgerReview({
-  activeLedgers,
-  pendingSuggestions,
-  onOpenReview,
-  onConfirm,
-  onReject,
-  onRefresh,
-  onAddLedger
+function InvestmentsDashboard({
+  synced,
+  refreshing,
+  rows,
+  pendingCount,
+  onSync,
+  onAddManual,
+  onOpenReview
 }: {
-  activeLedgers: ConfirmedInvestmentLedger[];
-  pendingSuggestions: InvestmentLedgerSuggestion[];
-  onOpenReview: (suggestionId: string) => void;
-  onConfirm: (suggestion: InvestmentLedgerSuggestion) => void;
-  onReject: (suggestion: InvestmentLedgerSuggestion) => void;
-  onRefresh: () => void;
-  onAddLedger: () => void;
+  synced: boolean;
+  refreshing: boolean;
+  rows: InvestmentListingRow[];
+  pendingCount: number;
+  onSync: () => void;
+  onAddManual: () => void;
+  onOpenReview: () => void;
 }) {
-  if (!activeLedgers.length && !pendingSuggestions.length) {
+  if (!synced && !rows.length) {
     return (
       <DashboardEmptyState
-        title="No investment ledgers active"
-        copy="Add an ERP ledger manually or refresh suggestions after the next ERP sync to classify investment accounts."
-        action="Add Investment Ledger"
-        onAction={onAddLedger}
+        title="No Investment yet"
+        copy="We couldn't find any investments from your Zoho account. Sync again to retry, or add one manually."
+        primaryAction={refreshing ? "Syncing" : "Sync Again"}
+        secondaryAction="Add manually"
+        onPrimaryAction={onSync}
+        onSecondaryAction={onAddManual}
+        primaryDisabled={refreshing}
+        darkSecondary
       />
     );
   }
 
   return (
-    <div className="erp-ledger-sections">
-      <section className="figma-section erp-investment-section">
-        <div className="section-title">
-          <div>
-            <h2>Active Investment Ledgers</h2>
-            <p>{activeLedgers.length} ledgers are available to the Treasury Agent.</p>
-          </div>
-          <button className="figma-primary erp-add-ledger-button" onClick={onAddLedger}>
-            <Plus size={17} />
-            Add Investment Ledger
-          </button>
-        </div>
-        <ActiveInvestmentLedgerTable activeLedgers={activeLedgers} />
-      </section>
-
-      <section className="figma-section erp-investment-section">
-        <div className="section-title">
-          <div>
-            <h2>Pending Confirmation</h2>
-            <p>{pendingSuggestions.length ? `${pendingSuggestions.length} suggestions need confirmation before the Agent can use them.` : "No pending suggestions after the latest review."}</p>
-          </div>
-          <button className="figma-secondary erp-compact-button" onClick={onRefresh}>
-            <RefreshCw size={15} />
-            Refresh Suggestions
-          </button>
-        </div>
-        {pendingSuggestions.length ? (
-          <PendingInvestmentLedgerTable
-            pendingSuggestions={pendingSuggestions}
-            onOpenReview={onOpenReview}
-            onConfirm={onConfirm}
-            onReject={onReject}
-          />
-        ) : (
-          <div className="erp-compact-empty">
-            <EmptyIcon />
-            <div>
-              <strong>No suggestions pending</strong>
-              <span>Active ledgers remain visible above while Kodo waits for new ERP ledger classifications.</span>
-            </div>
-          </div>
-        )}
-      </section>
+    <div className="table-wrap erp-table-card erp-investments-table-card">
+      {pendingCount > 0 && (
+        <button className="erp-review-banner" onClick={onOpenReview}>
+          <span className="erp-banner-icon">!</span>
+          <strong>{pendingCount} investment requires review.</strong>
+          <span>Check now to confirm</span>
+          <span aria-hidden="true">→</span>
+        </button>
+      )}
+      <InvestmentListingTable rows={rows} />
+      <PaginationFooter />
     </div>
   );
 }
 
-function ActiveInvestmentLedgerTable({ activeLedgers }: { activeLedgers: ConfirmedInvestmentLedger[] }) {
-  if (!activeLedgers.length) {
-    return (
-      <div className="erp-compact-empty">
-        <EmptyIcon />
-        <div>
-          <strong>No active ledgers yet</strong>
-          <span>Confirm a suggestion or add a synced ledger manually to activate it.</span>
-        </div>
-      </div>
-    );
-  }
-
+function InvestmentListingTable({ rows }: { rows: InvestmentListingRow[] }) {
   return (
-    <div className="table-wrap erp-table-card">
-      <table className="figma-table erp-active-ledger-table">
-        <thead>
-          <tr>
-            <th>Ledger Name</th>
-            <th>Source</th>
-            <th>Ledger Group</th>
-            <th>Instrument Type</th>
-            <th className="align-right">Closing Balance</th>
-            <th>Added On</th>
-            <th>Added From</th>
-            <th>Status</th>
+    <table className="figma-table erp-investment-list-table">
+      <thead>
+        <tr>
+          <th>Ledger Name</th>
+          <th>Ledger Group</th>
+          <th>Instrument Type</th>
+          <th>Source</th>
+          <th className="align-right">Closing Balance</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row) => (
+          <tr key={row.id}>
+            <td>{row.ledgerName}</td>
+            <td>{row.ledgerGroup}</td>
+            <td>{formatInstrumentType(row.instrumentType)}</td>
+            <td>{formatSource(row.sourceSystem)}</td>
+            <td className="align-right">{formatMoneyDecimal(row.closingBalance)}</td>
           </tr>
-        </thead>
-        <tbody>
-          {activeLedgers.map((ledger) => (
-            <tr key={ledger.investmentLedgerId}>
-              <td>{ledger.ledgerName}</td>
-              <td>{formatSource(ledger.sourceSystem)}</td>
-              <td>{ledger.ledgerGroup}</td>
-              <td>{formatInstrumentType(ledger.investmentInstrumentType)}</td>
-              <td className="align-right">{formatMoney(ledger.closingBalance)}</td>
-              <td>{formatDate(ledger.confirmedAt)}</td>
-              <td>{ledger.reviewSource === "MANUAL" ? "Manual" : "Suggested"}</td>
-              <td><span className="erp-active-status">Active</span></td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
+        ))}
+      </tbody>
+    </table>
   );
 }
 
-function PendingInvestmentLedgerTable({
+function ReviewInvestmentsPage({
   pendingSuggestions,
-  onOpenReview,
+  onBack,
   onConfirm,
   onReject
 }: {
   pendingSuggestions: InvestmentLedgerSuggestion[];
-  onOpenReview: (suggestionId: string) => void;
+  onBack: () => void;
   onConfirm: (suggestion: InvestmentLedgerSuggestion) => void;
   onReject: (suggestion: InvestmentLedgerSuggestion) => void;
 }) {
   return (
-    <div className="table-wrap erp-table-card">
-      <table className="figma-table erp-ledger-table">
-        <thead>
-          <tr>
-            <th>Ledger Name</th>
-            <th>Account Type</th>
-            <th>Ledger Group</th>
-            <th>Source</th>
-            <th className="align-right">Closing Balance</th>
-            <th>Suggested Type</th>
-            <th>Confidence</th>
-            <th>Reason</th>
-            <th className="align-right">Action</th>
-          </tr>
-        </thead>
-        <tbody>
-          {pendingSuggestions.map((suggestion) => (
-            <tr key={suggestion.suggestionId}>
-              <td>
-                <button className="erp-link-button" onClick={() => onOpenReview(suggestion.suggestionId)}>
-                  {suggestion.ledgerName}
-                </button>
-              </td>
-              <td>{prettySnake(suggestion.accountType)}</td>
-              <td>{suggestion.ledgerGroup}</td>
-              <td>{formatSource(suggestion.sourceSystem)}</td>
-              <td className="align-right">{formatMoney(suggestion.closingBalance)}</td>
-              <td>{formatInstrumentType(suggestion.suggestedInstrumentType)}</td>
-              <td><span className={`confidence confidence-${suggestion.confidence.toLowerCase()}`}>{suggestion.confidence}</span></td>
-              <td><span className="erp-reason">{suggestion.reason}</span></td>
-              <td>
-                <div className="erp-row-actions">
-                  <button className="icon-button" onClick={() => onOpenReview(suggestion.suggestionId)} aria-label={`Review ${suggestion.ledgerName}`}>
-                    <Eye size={16} />
-                  </button>
-                  <button className="icon-button success" onClick={() => onConfirm(suggestion)} aria-label={`Confirm ${suggestion.ledgerName}`}>
-                    <Check size={16} />
-                  </button>
-                  <button className="icon-button danger" onClick={() => onReject(suggestion)} aria-label={`Reject ${suggestion.ledgerName}`}>
-                    <X size={16} />
-                  </button>
-                </div>
-              </td>
+    <section className="erp-review-page">
+      <div className="erp-review-page-head">
+        <button className="erp-back-button" onClick={onBack} aria-label="Back to ERP investments">
+          <ArrowLeft size={22} />
+        </button>
+        <div>
+          <h1>Review and confirm investments</h1>
+          <p>{pendingSuggestions.length} investments requires confirmation</p>
+        </div>
+      </div>
+
+      <div className="table-wrap erp-table-card">
+        <table className="figma-table erp-review-confirm-table">
+          <thead>
+            <tr>
+              <th>Ledger Name</th>
+              <th>Ledger Group</th>
+              <th>Instrument Type</th>
+              <th>Source</th>
+              <th className="align-right">Closing Balance</th>
+              <th>Confidence ⓘ</th>
+              <th className="align-right">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-function InvestmentLedgerSheet({
-  suggestion,
-  onClose,
-  onConfirm,
-  onEditAndConfirm,
-  onReject
-}: {
-  suggestion: InvestmentLedgerSuggestion;
-  onClose: () => void;
-  onConfirm: (type: InvestmentInstrumentType, notes: string) => void;
-  onEditAndConfirm: (type: InvestmentInstrumentType, notes: string) => void;
-  onReject: (notes: string) => void;
-}) {
-  const [instrumentType, setInstrumentType] = useState<InvestmentInstrumentType>(
-    suggestion.selectedInstrumentType ?? suggestion.suggestedInstrumentType
-  );
-  const [notes, setNotes] = useState("Confirmed by finance admin.");
-  const isEdited = instrumentType !== suggestion.suggestedInstrumentType;
-
-  return (
-    <Sheet width={680} onClose={onClose}>
-      <div className="sheet-header erp-review-header">
-        <div className="sheet-fund-title">
-          <span className="erp-review-icon"><ClipboardList size={22} /></span>
-          <div>
-            <h2>{suggestion.ledgerName}</h2>
-            <span>{formatSource(suggestion.sourceSystem)} · Synced {formatDate(suggestion.lastSyncedAt)}</span>
-          </div>
-        </div>
-      </div>
-      <div className="sheet-body erp-review-body">
-        <div className="erp-review-summary">
-          <Detail label="Closing Balance" value={formatMoney(suggestion.closingBalance)} />
-          <Detail label="Account Type" value={prettySnake(suggestion.accountType)} />
-          <Detail label="Ledger Group" value={suggestion.ledgerGroup} />
-          <Detail label="Parent Group" value={suggestion.parentLedgerGroup} />
-        </div>
-
-        <label className="erp-review-field">
-          <span>Investment Instrument Type</span>
-          <select value={instrumentType} onChange={(event) => setInstrumentType(event.target.value as InvestmentInstrumentType)}>
-            {instrumentOptions.map((option) => (
-              <option key={option} value={option}>{formatInstrumentType(option)}</option>
+          </thead>
+          <tbody>
+            {pendingSuggestions.map((suggestion) => (
+              <tr key={suggestion.suggestionId}>
+                <td>{suggestion.ledgerName}</td>
+                <td>{suggestion.ledgerGroup}</td>
+                <td>{formatInstrumentType(suggestion.selectedInstrumentType ?? suggestion.suggestedInstrumentType)}</td>
+                <td>{formatSource(suggestion.sourceSystem)}</td>
+                <td className="align-right">{formatMoneyDecimal(suggestion.closingBalance)}</td>
+                <td><span className={`confidence confidence-${suggestion.confidence.toLowerCase()}`}>{prettyConfidence(suggestion.confidence)}</span></td>
+                <td>
+                  <div className="erp-review-row-actions">
+                    <button className="erp-square-action" onClick={() => onConfirm(suggestion)} aria-label={`Confirm ${suggestion.ledgerName}`}>
+                      <Check size={18} />
+                    </button>
+                    <button className="erp-square-action" onClick={() => onReject(suggestion)} aria-label={`Reject ${suggestion.ledgerName}`}>
+                      <X size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
             ))}
-          </select>
-        </label>
-
-        <div className="sheet-banner warning">
-          <strong>Why Kodo suggested this ledger</strong>
-          <span>{suggestion.reason}</span>
-        </div>
-
-        <div className="erp-signal-list">
-          <h3>Matched Signals</h3>
-          {suggestion.matchedSignals.map((signal) => (
-            <span key={signal}>{signal}</span>
-          ))}
-        </div>
-
-        <label className="erp-review-field">
-          <span>Review Notes</span>
-          <textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
-        </label>
-
-        <div className="sheet-actions erp-review-actions">
-          <button className="figma-secondary" onClick={() => onReject(notes)}>Reject</button>
-          <button className="figma-secondary" onClick={() => onConfirm(instrumentType, notes)}>Confirm</button>
-          <button className="figma-primary" onClick={() => onEditAndConfirm(instrumentType, notes)} disabled={!isEdited}>
-            Edit & Confirm
-          </button>
-        </div>
+          </tbody>
+        </table>
+        <PaginationFooter />
       </div>
-    </Sheet>
+    </section>
   );
 }
 
@@ -584,7 +546,7 @@ function ManualInvestmentLedgerSheet({
               onClick={() => setSelectedLedgerId(ledger.id)}
             >
               <strong>{ledger.name}</strong>
-              <span>{ledger.provider} · {ledger.group} · {ledger.balance === undefined ? "No balance synced" : formatMoney(ledger.balance)}</span>
+              <span>{ledger.provider} · {ledger.group} · {ledger.balance === undefined ? "No balance synced" : formatMoneyDecimal(ledger.balance)}</span>
             </button>
           )) : (
             <div className="erp-picker-empty">No available ledgers match this search.</div>
@@ -595,8 +557,8 @@ function ManualInvestmentLedgerSheet({
           <div className="erp-review-summary">
             <Detail label="Source" value={selectedLedger.provider} />
             <Detail label="Ledger Group" value={selectedLedger.group} />
-            <Detail label="Closing Balance" value={selectedLedger.balance === undefined ? "₹0" : formatMoney(selectedLedger.balance)} />
-            <Detail label="AI Confidence" value={selectedLedger.confidence ?? "Not classified"} />
+            <Detail label="Closing Balance" value={selectedLedger.balance === undefined ? "₹0.00" : formatMoneyDecimal(selectedLedger.balance)} />
+            <Detail label="AI Confidence" value={selectedLedger.confidence ? prettyConfidence(selectedLedger.confidence) : "Not classified"} />
           </div>
         )}
 
@@ -634,24 +596,50 @@ function ManualInvestmentLedgerSheet({
 function DashboardEmptyState({
   title,
   copy,
-  action,
-  onAction
+  primaryAction,
+  secondaryAction,
+  onPrimaryAction,
+  onSecondaryAction,
+  primaryDisabled,
+  darkSecondary
 }: {
   title: string;
   copy: string;
-  action: string;
-  onAction: () => void;
+  primaryAction: string;
+  secondaryAction?: string;
+  onPrimaryAction: () => void;
+  onSecondaryAction?: () => void;
+  primaryDisabled?: boolean;
+  darkSecondary?: boolean;
 }) {
   return (
     <section className="erp-empty-state">
       <EmptyIcon />
       <h2>{title}</h2>
       <p>{copy}</p>
-      <button className="figma-secondary" onClick={onAction}>
-        <RefreshCw size={13} />
-        {action}
-      </button>
+      <div className="erp-empty-actions">
+        <button className="figma-secondary" onClick={onPrimaryAction} disabled={primaryDisabled}>
+          <RefreshCw size={13} className={primaryDisabled ? "spin" : ""} />
+          {primaryAction}
+        </button>
+        {secondaryAction && onSecondaryAction && (
+          <button className={darkSecondary ? "figma-primary erp-dark-button" : "figma-secondary"} onClick={onSecondaryAction}>
+            {secondaryAction}
+          </button>
+        )}
+      </div>
     </section>
+  );
+}
+
+function PaginationFooter() {
+  return (
+    <div className="erp-pagination">
+      <button>10 Per Page</button>
+      <button className="erp-pagination-icon" aria-label="Previous page">←</button>
+      <span>Page 1 of 1</span>
+      <button className="erp-pagination-icon" aria-label="Next page">→</button>
+    </div>
   );
 }
 
@@ -664,23 +652,29 @@ function Detail({ label, value }: { label: string; value: string }) {
   );
 }
 
-function prettySnake(value: string) {
-  return value
-    .split("_")
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(" ");
+function orderForLedger(ledgerId: string, fallback: number) {
+  const order: Record<string, number> = {
+    "hdfc-liquid-fund": 1,
+    "sbi-equity-fund": 2,
+    "axis-corporate-bond-fund": 3,
+    "icici-balanced-fund": 4
+  };
+  return order[ledgerId] ?? fallback;
 }
 
-function formatSource(source: InvestmentLedgerSuggestion["sourceSystem"]) {
-  return source === "TALLY" ? "Tally" : "Zoho Books";
+function formatSource(source: SourceSystem) {
+  return source === "TALLY" ? "Tally ERP" : "Zoho Books";
 }
 
-function formatDate(value: string) {
-  return new Intl.DateTimeFormat("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  }).format(new Date(value));
+function formatMoneyDecimal(amount: number) {
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
+function prettyConfidence(value: "HIGH" | "MEDIUM" | "LOW") {
+  return value.charAt(0) + value.slice(1).toLowerCase();
 }

@@ -14,7 +14,7 @@ import {
 import type { AccountingStatus, Scenario } from "../types/accounting";
 import { scenarioLabels } from "../data/accountingData";
 
-export type Section = "portfolio" | "transactions" | "erp";
+export type Section = "portfolio" | "transactions" | "yield" | "erp" | "explore";
 
 export function Layout({
   section,
@@ -49,7 +49,9 @@ export function Layout({
               <div key={item.id}>
                 <button
                   onClick={() => {
-                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "erp") setSection(item.id);
+                    if (item.id === "portfolio" || item.id === "transactions" || item.id === "explore" || item.id === "erp") {
+                      setSection(item.id);
+                    }
                   }}
                   className={`figma-nav-item ${active ? "active" : ""}`}
                 >
