@@ -258,7 +258,7 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
       </header>
 
       <section className="yield-category-summary">
-        <h2>Top funds by category</h2>
+        <h2>Category Benchmarks</h2>
         <div className="yield-benchmark-card">
           <table className="yield-benchmark-table">
             <thead>
