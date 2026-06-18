@@ -1309,11 +1309,21 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-category-summary {
   margin-bottom: 46px;
 }
+.yield-category-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 22px;
+}
 .yield-category-summary h2,
 .yield-table-heading h2 {
-  margin: 0 0 22px;
+  margin: 0;
   font-size: 22px;
   font-weight: 560;
+}
+.yield-table-heading h2 {
+  margin-bottom: 0;
 }
 .yield-benchmark-card {
   border: 1px solid var(--border);
@@ -1323,7 +1333,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 }
 .yield-benchmark-table {
   width: 100%;
-  min-width: 1710px;
+  min-width: var(--yield-benchmark-table-min-width, 1710px);
   border-collapse: collapse;
   table-layout: fixed;
 }
@@ -1420,9 +1430,27 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-final-filters {
   display: flex;
   gap: 18px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 .yield-select-menu {
   position: relative;
+}
+.yield-select-menu > button {
+  min-width: 148px;
+}
+.yield-multi-select-menu > button {
+  min-width: 190px;
+}
+.yield-multi-select-menu > button span {
+  display: grid;
+  gap: 2px;
+  text-align: left;
+}
+.yield-multi-select-menu > button small {
+  color: #777;
+  font-size: 11px;
+  font-weight: 430;
 }
 .yield-select-options {
   position: absolute;
@@ -1435,6 +1463,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   border: 1px solid var(--border);
   background: var(--panel);
   box-shadow: 0 22px 44px rgba(0, 0, 0, 0.12);
+}
+.yield-multi-select-options {
+  width: 286px;
+  max-height: 350px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 .yield-select-options button {
   width: 100%;
@@ -1452,6 +1487,35 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-select-options button:hover,
 .yield-select-options button.selected {
   background: #fbfbfc;
+}
+.yield-multi-select-top,
+.yield-multi-select-footer {
+  flex: 0 0 auto;
+  background: var(--panel);
+}
+.yield-multi-select-top {
+  border-bottom: 1px solid var(--border);
+}
+.yield-multi-select-list {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+.yield-multi-select-footer {
+  border-top: 1px solid var(--border);
+  box-shadow: 0 -10px 18px rgba(255, 255, 255, 0.92);
+}
+.yield-select-options .yield-select-clear {
+  min-height: 44px;
+  color: #b42318;
+}
+.yield-select-options .yield-select-clear:hover {
+  background: #fff7f7;
+}
+.yield-select-empty {
+  padding: 14px 18px;
+  color: var(--muted-foreground);
+  font-size: 13px;
 }
 .yield-final-table-card {
   border: 1px solid var(--border);
@@ -2837,6 +2901,10 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   .explore-card-grid {
     grid-template-columns: 1fr;
   }
+  .yield-category-summary-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
   .explore-filters,
   .yield-final-controls,
   .yield-final-filters {
@@ -2853,7 +2921,7 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
     min-width: 760px;
   }
   .yield-benchmark-table {
-    min-width: 1710px;
+    min-width: var(--yield-benchmark-table-min-width, 1710px);
   }
   .yield-pagination {
     justify-content: flex-start;

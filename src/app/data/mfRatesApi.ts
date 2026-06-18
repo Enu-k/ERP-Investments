@@ -3,6 +3,8 @@ export interface MfRateApiRow {
   scheme_name: string;
   amc: string;
   instrument: "Liquid Mutual Fund" | "Overnight Fund" | "Money Market Fund";
+  scheme_category?: string;
+  scheme_sub_category?: string;
   nav_date?: string;
   nav_value?: number;
   settlement: "Same-day" | "T+1";

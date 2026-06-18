@@ -188,10 +188,83 @@ function tenureApplies(row: RawFdRateRow, tenureDays: number) {
 }
 
 function tenureBounds(row: RawFdRateRow): [number | null, number | null] {
+  const parsed = tenureBoundsFromLabel(firstValue(row, "tenure_label", "tenureLabel"));
+  if (parsed[0] !== null || parsed[1] !== null) return parsed;
+
   return [
     intValue(firstValue(row, "min_days", "llm_tenure_min_days", "tenorMinDays")),
     intValue(firstValue(row, "max_days", "llm_tenure_max_days", "tenorMaxDays"))
   ];
+}
+
+function tenureBoundsFromLabel(value: unknown): [number | null, number | null] {
+  if (typeof value !== "string" || !value.trim()) return [null, null];
+
+  const text = value.toLowerCase().replace(/[–—]/g, "-");
+  if (text.includes("less than")) {
+    const [before, after] = text.split("less than", 2);
+    const minDays = durationSegmentToDays(before);
+    const maxDays = durationSegmentToDays(after);
+    if (minDays !== null || maxDays !== null) return [minDays, maxDays];
+  }
+
+  const parts = text.split(/\s+to\s+|\s*-\s*/, 2);
+  if (parts.length === 2) {
+    const [before, after] = parts;
+    let minDays = durationSegmentToDays(before);
+    const maxDays = durationSegmentToDays(after);
+    if (minDays === null) {
+      const startAmount = firstNumber(before);
+      const endUnit = firstDurationUnit(after);
+      if (startAmount !== null && endUnit !== null) {
+        minDays = durationToDays(startAmount, inferMissingStartUnit(startAmount, endUnit));
+      }
+    }
+    if (minDays !== null || maxDays !== null) return [minDays, maxDays];
+  }
+
+  const rangeMatch = text.match(
+    /^>?\s*(\d+(?:\.\d+)?)\s*(days?|months?|years?|yrs?|yr|y)?\s*(?:to|-)\s*<?\s*(\d+(?:\.\d+)?)\s*(days?|months?|years?|yrs?|yr|y)/
+  );
+  if (rangeMatch) {
+    const startUnit = rangeMatch[2] || inferMissingStartUnit(rangeMatch[1], rangeMatch[4]);
+    return [durationToDays(rangeMatch[1], startUnit), durationToDays(rangeMatch[3], rangeMatch[4])];
+  }
+
+  const exactDays = durationSegmentToDays(text);
+  if (exactDays !== null) return [exactDays, exactDays];
+  return [null, null];
+}
+
+function durationSegmentToDays(segment: string) {
+  let total = 0;
+  const matches = segment.matchAll(/(\d+(?:\.\d+)?)\s*(days?|months?|years?|yrs?|yr|y)/g);
+  for (const match of matches) total += durationToDays(match[1], match[2]);
+  return total || null;
+}
+
+function durationToDays(amount: string, unit: string) {
+  const value = Number(amount);
+  if (unit.startsWith("year") || unit.startsWith("yr") || unit === "y") return Math.trunc(value * 365);
+  if (unit.startsWith("month")) return Math.trunc(value * 30);
+  return Math.trunc(value);
+}
+
+function inferMissingStartUnit(amount: string, endUnit: string) {
+  if ((endUnit.startsWith("year") || endUnit.startsWith("yr") || endUnit === "y") && Number(amount) > 31) {
+    return "days";
+  }
+  return endUnit;
+}
+
+function firstNumber(text: string) {
+  const match = text.match(/(\d+(?:\.\d+)?)/);
+  return match ? match[1] : null;
+}
+
+function firstDurationUnit(text: string) {
+  const match = text.match(/(days?|months?|years?|yrs?|yr|y)/);
+  return match ? match[1] : null;
 }
 
 function amountApplies(row: RawFdRateRow, amountInr: number) {

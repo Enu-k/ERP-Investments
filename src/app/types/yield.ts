@@ -46,6 +46,8 @@ export interface MutualFundInstrument {
   provider: string;
   schemeName: string;
   schemeCode: string;
+  schemeCategory?: string;
+  schemeSubCategory?: string;
   planOption: string;
   settlementTimeline: "Same-day" | "T+1";
   exitLoad: string;
@@ -101,6 +103,8 @@ export interface YieldComparisonRow {
   lastSyncStatus?: string;
   isLive?: boolean;
   schemeCode?: string;
+  schemeCategory?: string;
+  schemeSubCategory?: string;
   navDate?: string;
   navValue?: number;
   dataSource?: string;

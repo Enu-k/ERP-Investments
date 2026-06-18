@@ -10,6 +10,7 @@ import type {
   YieldComparisonRow,
   YieldScenario
 } from "../types/yield";
+import { inferSchemeTaxonomy } from "./kodoTaxonomy";
 
 export const tenureOptions: TenureOption[] = [
   { label: "7 days", days: 7 },
@@ -292,12 +293,15 @@ export function buildYieldRows(principal: number, tenureDays: number): YieldComp
     const estimatedScenarios = scenarios ? scenarioMoney(principal, scenarios) : undefined;
     const annualisedScenarios = scenarios ? annualiseScenarios(scenarios, tenureDays) : undefined;
     const dataSufficient = Boolean(scenarios);
+    const schemeTaxonomy = inferSchemeTaxonomy(fund.instrument, fund.schemeName, fund.schemeCategory, fund.schemeSubCategory);
 
     return {
       id: fund.id,
       instrument: fund.instrument,
       name: fund.schemeName,
       provider: fund.provider,
+      schemeCategory: schemeTaxonomy.schemeCategory,
+      schemeSubCategory: schemeTaxonomy.schemeSubCategory,
       returnType: "Indicative Range",
       selectedTenureDays: tenureDays,
       periodReturnLabel: scenarios ? rangeLabel(scenarios, formatPercent) : "Insufficient NAV history",

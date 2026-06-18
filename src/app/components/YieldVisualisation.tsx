@@ -1,5 +1,5 @@
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Check, ChevronDown, Landmark, Search } from "lucide-react";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   buildYieldRows,
   calculateFdReturn,
@@ -21,6 +21,15 @@ import {
   type MfRateApiRow,
   type MfRatesSyncStatus
 } from "../data/mfRatesApi";
+import {
+  describeKodoCategory,
+  getKodoSubCategories,
+  inferSchemeTaxonomy,
+  kodoSchemeCategories,
+  normalizeKodoCategory,
+  type KodoSchemeCategory,
+  type KodoSchemeSubCategory
+} from "../data/kodoTaxonomy";
 import type { InstrumentType, YieldComparisonRow } from "../types/yield";
 import { Sheet } from "./Shared";
 
@@ -28,82 +37,94 @@ const methodologyCopy =
   "Mutual fund estimates are calculated using historical rolling NAV returns for the selected tenure. Conservative, balanced, and aggressive estimates represent the 25th, 50th, and 75th percentile historical outcomes. Actual returns may vary.";
 
 type SortOrder = "desc" | "asc";
-type CategoryFilter = "All" | InstrumentType;
+type SchemeTypeOption = "Fixed Deposit" | KodoSchemeCategory;
 type ProviderFilter = "All" | string;
 interface BenchmarkCategoryDefinition {
   label: string;
   description: string;
-  instruments: InstrumentType[];
+  schemeCategory?: KodoSchemeCategory;
+  instrument?: InstrumentType;
   dummy?: {
     min: BenchmarkDisplayRow;
     max: BenchmarkDisplayRow;
   };
 }
 
-const categoryOptions: CategoryFilter[] = ["All", "Money Market Fund", "Liquid Mutual Fund", "Overnight Fund", "Fixed Deposit"];
-const benchmarkCategoryDefinitions: BenchmarkCategoryDefinition[] = [
-  {
-    label: "Ultra Short Term Funds",
-    description: "Liquid, money market, overnight",
-    instruments: ["Liquid Mutual Fund", "Money Market Fund", "Overnight Fund"]
-  },
-  {
-    label: "Debt Duration Funds",
-    description: "Dynamic, medium duration",
-    instruments: [],
+const schemeTypeOptions: SchemeTypeOption[] = ["Fixed Deposit", ...kodoSchemeCategories];
+const allSchemeSubCategoryOptions = getKodoSubCategories("All") as KodoSchemeSubCategory[];
+
+const categoryBenchmarkFallbacks: Partial<Record<KodoSchemeCategory, { dummy: { min: BenchmarkDisplayRow; max: BenchmarkDisplayRow } }>> = {
+  Debt: {
     dummy: {
       max: { annualisedReturn: 0.0785, label: "HDFC Dynamic Bond Fund" },
       min: { annualisedReturn: 0.0615, label: "ICICI Medium Duration Fund" }
     }
   },
-  {
-    label: "Equity Funds",
-    description: "Contra, ELSS, index, thematic",
-    instruments: [],
+  Equity: {
     dummy: {
       max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
       min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
     }
   },
-  {
-    label: "Hybrid Funds",
-    description: "Aggressive, conservative, balanced advantage",
-    instruments: [],
+  Hybrid: {
     dummy: {
       max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
       min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
     }
   },
-  {
-    label: "Solution-Oriented Funds",
-    description: "Children's, retirement",
-    instruments: [],
+  "Solution Oriented": {
     dummy: {
       max: { annualisedReturn: 0.092, label: "HDFC Retirement Savings Fund" },
       min: { annualisedReturn: 0.0685, label: "Tata Young Citizens Fund" }
     }
   },
-  {
-    label: "Other Mutual Funds",
-    description: "All, not specified",
-    instruments: [],
+  Others: {
     dummy: {
       max: { annualisedReturn: 0.084, label: "Motilal Oswal Index Fund" },
       min: { annualisedReturn: 0.056, label: "Not Specified Fund Sample" }
     }
   },
+  "Index Funds": {
+    dummy: {
+      max: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" },
+      min: { annualisedReturn: 0.056, label: "Index Fund Sample" }
+    }
+  },
+  "Fund of Fund": {
+    dummy: {
+      max: { annualisedReturn: 0.084, label: "Domestic Fund of Funds Sample" },
+      min: { annualisedReturn: 0.0595, label: "International Fund of Funds Sample" }
+    }
+  },
+  "Not Specified": {
+    dummy: {
+      max: { annualisedReturn: 0.084, label: "Not Specified Fund Sample" },
+      min: { annualisedReturn: 0.056, label: "Not Specified Fund Sample" }
+    }
+  }
+};
+
+const benchmarkCategoryDefinitions: BenchmarkCategoryDefinition[] = [
   {
     label: "Fixed Deposit",
-    description: "-",
-    instruments: ["Fixed Deposit"]
-  }
+    description: "Baseline",
+    instrument: "Fixed Deposit"
+  },
+  ...kodoSchemeCategories.map((category) => ({
+    label: category,
+    description: describeKodoCategory(category),
+    schemeCategory: category,
+    dummy: categoryBenchmarkFallbacks[category]?.dummy
+  }))
 ];
 
 export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const [amountInput, setAmountInput] = useState("1,00,000");
   const [selectedTenure, setSelectedTenure] = useState(30);
   const [customTenure, setCustomTenure] = useState("120");
-  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>("All");
+  const [selectedBenchmarkCategories, setSelectedBenchmarkCategories] = useState<KodoSchemeCategory[]>(() => [...kodoSchemeCategories]);
+  const [selectedSchemeTypes, setSelectedSchemeTypes] = useState<SchemeTypeOption[]>(() => [...schemeTypeOptions]);
+  const [selectedSchemeSubCategories, setSelectedSchemeSubCategories] = useState<KodoSchemeSubCategory[]>(() => [...allSchemeSubCategoryOptions]);
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>("All");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
@@ -131,31 +152,52 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
     () => Array.from(new Set(deploymentRows.map((row) => row.provider))).sort(),
     [deploymentRows]
   );
+  const selectedKodoSchemeTypes = useMemo(
+    () => selectedSchemeTypes.filter(isKodoSchemeType),
+    [selectedSchemeTypes]
+  );
+  const schemeSubCategoryOptions = useMemo(
+    () => getSubCategoryOptionsForSchemeTypes(selectedKodoSchemeTypes),
+    [selectedKodoSchemeTypes]
+  );
   const filteredRows = useMemo(() => {
     return deploymentRows
-      .filter((row) => categoryFilter === "All" || row.instrument === categoryFilter)
+      .filter((row) => matchesSchemeFilters(row, selectedSchemeTypes, selectedSchemeSubCategories))
       .filter((row) => providerFilter === "All" || row.provider === providerFilter)
       .sort((a, b) => sortDeploymentRows(a, b, sortOrder));
-  }, [deploymentRows, categoryFilter, providerFilter, sortOrder]);
+  }, [deploymentRows, selectedSchemeTypes, selectedSchemeSubCategories, providerFilter, sortOrder]);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
   const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
   const orderedBenchmarkColumns = useMemo(() => {
     const fixedDepositColumn = benchmarkColumns.find((column) => column.label === "Fixed Deposit");
-    const mutualFundColumns = benchmarkColumns.filter((column) => column.label !== "Fixed Deposit");
+    const mutualFundColumns = benchmarkColumns.filter((column) =>
+      column.label !== "Fixed Deposit" && selectedBenchmarkCategories.includes(column.label as KodoSchemeCategory)
+    );
     return fixedDepositColumn ? [fixedDepositColumn, ...mutualFundColumns] : benchmarkColumns;
-  }, [benchmarkColumns]);
+  }, [benchmarkColumns, selectedBenchmarkCategories]);
+  const benchmarkTableStyle = {
+    "--yield-benchmark-table-min-width": `${150 + orderedBenchmarkColumns.length * 220}px`
+  } as CSSProperties;
 
   useEffect(() => {
     setPage(1);
-  }, [categoryFilter, providerFilter, sortOrder, amountInput, selectedTenure, customTenure]);
+  }, [selectedSchemeTypes, selectedSchemeSubCategories, providerFilter, sortOrder, amountInput, selectedTenure, customTenure]);
 
   useEffect(() => {
     if (providerFilter !== "All" && !providerOptions.includes(providerFilter)) {
       setProviderFilter("All");
     }
   }, [providerFilter, providerOptions]);
+
+  useEffect(() => {
+    const validSubCategories = new Set(schemeSubCategoryOptions);
+    const nextSelectedSubCategories = selectedSchemeSubCategories.filter((subCategory) => validSubCategories.has(subCategory));
+    if (nextSelectedSubCategories.length !== selectedSchemeSubCategories.length) {
+      setSelectedSchemeSubCategories(nextSelectedSubCategories);
+    }
+  }, [selectedSchemeSubCategories, schemeSubCategoryOptions]);
 
   const loadLiveFdRows = useCallback(async () => {
     if (!hasFdRatesApi()) return;
@@ -217,6 +259,19 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
     await Promise.allSettled([loadLiveFdRows(), loadLiveMfRows()]);
   };
 
+  const handleSchemeTypeChange = (nextSchemeTypes: SchemeTypeOption[]) => {
+    const currentSubCategoryOptions = schemeSubCategoryOptions;
+    const allSubCategoriesWereSelected = selectedSchemeSubCategories.length === currentSubCategoryOptions.length;
+    const nextKodoSchemeTypes = nextSchemeTypes.filter(isKodoSchemeType);
+    const nextSubCategoryOptions = getSubCategoryOptionsForSchemeTypes(nextKodoSchemeTypes);
+    setSelectedSchemeTypes(nextSchemeTypes);
+    setSelectedSchemeSubCategories((current) => {
+      if (allSubCategoriesWereSelected) return nextSubCategoryOptions;
+      const validNextSubCategories = new Set(nextSubCategoryOptions);
+      return current.filter((subCategory) => validNextSubCategories.has(subCategory));
+    });
+  };
+
   return (
     <div className="yield-final-page">
       <header className="yield-final-hero">
@@ -258,9 +313,19 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
       </header>
 
       <section className="yield-category-summary">
-        <h2>Category Benchmarks</h2>
+        <div className="yield-category-summary-heading">
+          <h2>Category Benchmarks</h2>
+          <MultiSelectMenu
+            label="Category"
+            allLabel="All categories"
+            options={[...kodoSchemeCategories]}
+            selectedValues={selectedBenchmarkCategories}
+            getLabel={(value) => value}
+            onChange={setSelectedBenchmarkCategories}
+          />
+        </div>
         <div className="yield-benchmark-card">
-          <table className="yield-benchmark-table">
+          <table className="yield-benchmark-table" style={benchmarkTableStyle}>
             <thead>
               <tr>
                 <th className="yield-benchmark-row-head" aria-hidden="true" />
@@ -305,12 +370,21 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
         <div className="yield-table-heading">
           <h2>{String(filteredRows.length).padStart(2, "0")} deployment options</h2>
           <div className="yield-final-filters">
-            <SelectMenu
-              label="Category"
-              value={categoryFilter}
-              options={categoryOptions}
-              getLabel={displayCategoryFilter}
-              onChange={(value) => setCategoryFilter(value)}
+            <MultiSelectMenu
+              label="Scheme type"
+              allLabel="All scheme types"
+              options={schemeTypeOptions}
+              selectedValues={selectedSchemeTypes}
+              getLabel={displaySchemeTypeFilter}
+              onChange={handleSchemeTypeChange}
+            />
+            <MultiSelectMenu
+              label="Scheme Sub-Category"
+              allLabel="All sub-categories"
+              options={schemeSubCategoryOptions}
+              selectedValues={selectedSchemeSubCategories}
+              getLabel={(value) => value}
+              onChange={setSelectedSchemeSubCategories}
             />
             <SelectMenu
               label="AMC"
@@ -411,7 +485,7 @@ interface BenchmarkDisplayRow {
 function buildBenchmarkColumns(rows: YieldComparisonRow[]): BenchmarkColumn[] {
   return benchmarkCategoryDefinitions.map((definition) => {
     const sourceRows = rows
-      .filter((row) => definition.instruments.includes(row.instrument) && row.available)
+      .filter((row) => row.available && matchesBenchmarkDefinition(row, definition))
       .sort((a, b) => getRankingAnnualisedReturn(a) - getRankingAnnualisedReturn(b));
 
     return {
@@ -421,6 +495,12 @@ function buildBenchmarkColumns(rows: YieldComparisonRow[]): BenchmarkColumn[] {
       max: sourceRows[sourceRows.length - 1] ? benchmarkDisplayRowFromYieldRow(sourceRows[sourceRows.length - 1]) : definition.dummy?.max
     };
   });
+}
+
+function matchesBenchmarkDefinition(row: YieldComparisonRow, definition: BenchmarkCategoryDefinition) {
+  if (definition.instrument) return row.instrument === definition.instrument;
+  if (definition.schemeCategory) return row.schemeCategory === definition.schemeCategory;
+  return false;
 }
 
 function benchmarkDisplayRowFromYieldRow(row: YieldComparisonRow): BenchmarkDisplayRow {
@@ -445,6 +525,104 @@ function BenchmarkCell({ className, row }: { className?: string; row?: Benchmark
       <strong>{`~${formatPercent(row.annualisedReturn)}`}</strong>
       <span>{row.label}</span>
     </td>
+  );
+}
+
+function MultiSelectMenu<T extends string>({
+  label,
+  allLabel,
+  options,
+  selectedValues,
+  getLabel,
+  onChange
+}: {
+  label: string;
+  allLabel: string;
+  options: T[];
+  selectedValues: T[];
+  getLabel: (value: T) => string;
+  onChange: (value: T[]) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+  const allSelected = options.length > 0 && selectedValues.length === options.length;
+  const summary = options.length === 0 ? "None" : allSelected ? "All" : selectedValues.length ? `${selectedValues.length} selected` : "None";
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: MouseEvent) => {
+      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    document.addEventListener("mousedown", handlePointerDown);
+    return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  const toggleOption = (option: T) => {
+    const nextValues = selectedValues.includes(option)
+      ? selectedValues.filter((value) => value !== option)
+      : [...selectedValues, option];
+    onChange(nextValues);
+  };
+
+  return (
+    <div className="yield-select-menu yield-multi-select-menu" ref={menuRef}>
+      <button type="button" onClick={() => setOpen((current) => !current)}>
+        <span>
+          <small>{label}</small>
+          {summary}
+        </span>
+        <ChevronDown size={16} />
+      </button>
+      {open && (
+        <div className="yield-select-options yield-multi-select-options">
+          {options.length ? (
+            <div className="yield-multi-select-top">
+              <button
+                type="button"
+                className={allSelected ? "selected" : ""}
+                onClick={() => onChange([...options])}
+              >
+                <span>{allLabel}</span>
+                {allSelected && <Check size={16} />}
+              </button>
+            </div>
+          ) : (
+            null
+          )}
+          <div className="yield-multi-select-list">
+            {options.length ? (
+              options.map((option) => {
+                const selected = selectedValues.includes(option);
+                return (
+                  <button
+                    key={option}
+                    type="button"
+                    className={selected ? "selected" : ""}
+                    onClick={() => toggleOption(option)}
+                  >
+                    <span>{getLabel(option)}</span>
+                    {selected && <Check size={16} />}
+                  </button>
+                );
+              })
+            ) : (
+              <div className="yield-select-empty">No options available</div>
+            )}
+          </div>
+          {options.length > 0 && (
+            <div className="yield-multi-select-footer">
+              <button
+                type="button"
+                className="yield-select-clear"
+                onClick={() => onChange([])}
+              >
+                <span>Clear all</span>
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -568,6 +746,34 @@ function getRankingAnnualisedReturn(row: YieldComparisonRow) {
   return row.annualisedReturn ?? 0;
 }
 
+function matchesSchemeFilters(
+  row: YieldComparisonRow,
+  selectedSchemeTypes: SchemeTypeOption[],
+  selectedSchemeSubCategories: KodoSchemeSubCategory[]
+) {
+  if (row.instrument === "Fixed Deposit") {
+    return selectedSchemeTypes.includes("Fixed Deposit");
+  }
+  const schemeCategory = normalizeKodoCategory(row.schemeCategory);
+  if (!schemeCategory || !selectedSchemeTypes.includes(schemeCategory)) return false;
+  if (!row.schemeSubCategory) return false;
+  return selectedSchemeSubCategories.includes(row.schemeSubCategory as KodoSchemeSubCategory);
+}
+
+function isKodoSchemeType(value: SchemeTypeOption): value is KodoSchemeCategory {
+  return value !== "Fixed Deposit";
+}
+
+function displaySchemeTypeFilter(value: SchemeTypeOption) {
+  if (value === "Fixed Deposit") return "Fixed deposit";
+  return value;
+}
+
+function getSubCategoryOptionsForSchemeTypes(schemeTypes: KodoSchemeCategory[]) {
+  return Array.from(new Set(schemeTypes.flatMap((schemeType) => getKodoSubCategories(schemeType) as KodoSchemeSubCategory[])))
+    .sort((a, b) => a.localeCompare(b));
+}
+
 function mapApiFdRow(row: FdRateApiRow, principal: number, tenureDays: number): YieldComparisonRow {
   const annualRate = row.rate_pa / 100;
   const estimatedReturn = calculateFdReturn(principal, annualRate, tenureDays);
@@ -602,11 +808,15 @@ function mapApiFdRow(row: FdRateApiRow, principal: number, tenureDays: number): 
 }
 
 function mapApiMfRow(row: MfRateApiRow, principal: number, tenureDays: number): YieldComparisonRow {
+  const schemeTaxonomy = inferSchemeTaxonomy(row.instrument, row.scheme_name, row.scheme_category, row.scheme_sub_category);
+
   return {
     id: `amfi-mf-${row.scheme_code}`,
     instrument: row.instrument,
     name: row.scheme_name,
     provider: row.amc,
+    schemeCategory: schemeTaxonomy.schemeCategory,
+    schemeSubCategory: schemeTaxonomy.schemeSubCategory,
     returnType: "Indicative Range",
     selectedTenureDays: tenureDays,
     periodReturnLabel: row.period_return_range_label ?? row.period_return_label ?? "Insufficient NAV history",
@@ -677,10 +887,6 @@ function displayInstrument(instrument: InstrumentType) {
   return "Current account";
 }
 
-function displayCategoryFilter(value: CategoryFilter) {
-  return value === "All" ? "All" : displayInstrument(value);
-}
-
 function getDisplayName(row: YieldComparisonRow) {
   if (row.instrument === "Fixed Deposit") return `${row.provider} FD`;
   return cleanFundName(row.name);
@@ -748,6 +954,8 @@ function YieldDetailSheet({ row, onClose }: { row: YieldComparisonRow; onClose: 
           <Detail label="Annualised Return" value={row.annualisedReturnLabel} />
           <Detail label="Liquidity" value={row.liquidity} />
           <Detail label="Last Updated" value={row.lastUpdated} />
+          {row.schemeCategory && <Detail label="Scheme Category" value={row.schemeCategory} />}
+          {row.schemeSubCategory && <Detail label="Scheme Sub-Category" value={row.schemeSubCategory} />}
           {row.schemeCode && <Detail label="AMFI Scheme Code" value={row.schemeCode} />}
           {row.navDate && <Detail label="Latest NAV Date" value={row.navDate} />}
           {row.navValue !== undefined && <Detail label="Latest NAV" value={`₹${row.navValue.toFixed(4)}`} />}
