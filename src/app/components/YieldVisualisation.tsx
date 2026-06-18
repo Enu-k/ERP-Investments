@@ -22,14 +22,14 @@ import {
   type MfRatesSyncStatus
 } from "../data/mfRatesApi";
 import {
-  describeKodoCategory,
-  getKodoSubCategories,
+  getVrSubCategories,
   inferSchemeTaxonomy,
-  kodoSchemeCategories,
-  normalizeKodoCategory,
-  type KodoSchemeCategory,
-  type KodoSchemeSubCategory
-} from "../data/kodoTaxonomy";
+  normalizeVrCategory,
+  vrEnabledTaxonomy,
+  vrSchemeCategories,
+  type VrSchemeCategory,
+  type VrSchemeSubCategory
+} from "../data/vrTaxonomy";
 import type { InstrumentType, YieldComparisonRow } from "../types/yield";
 import { Sheet } from "./Shared";
 
@@ -37,12 +37,12 @@ const methodologyCopy =
   "Mutual fund estimates are calculated using historical rolling NAV returns for the selected tenure. Conservative, balanced, and aggressive estimates represent the 25th, 50th, and 75th percentile historical outcomes. Actual returns may vary.";
 
 type SortOrder = "desc" | "asc";
-type SchemeTypeOption = "Fixed Deposit" | KodoSchemeCategory;
+type SchemeTypeOption = "Fixed Deposit" | VrSchemeCategory;
 type ProviderFilter = "All" | string;
 interface BenchmarkCategoryDefinition {
   label: string;
   description: string;
-  schemeCategory?: KodoSchemeCategory;
+  schemeSubCategory?: VrSchemeSubCategory;
   instrument?: InstrumentType;
   dummy?: {
     min: BenchmarkDisplayRow;
@@ -50,56 +50,99 @@ interface BenchmarkCategoryDefinition {
   };
 }
 
-const schemeTypeOptions: SchemeTypeOption[] = ["Fixed Deposit", ...kodoSchemeCategories];
-const allSchemeSubCategoryOptions = getKodoSubCategories("All") as KodoSchemeSubCategory[];
+const schemeTypeOptions: SchemeTypeOption[] = ["Fixed Deposit", ...vrSchemeCategories];
+const allSchemeSubCategoryOptions = getVrSubCategories("All") as VrSchemeSubCategory[];
+const defaultBenchmarkSubCategories: VrSchemeSubCategory[] = ["Liquid", "Overnight", "Money Market"];
 
-const categoryBenchmarkFallbacks: Partial<Record<KodoSchemeCategory, { dummy: { min: BenchmarkDisplayRow; max: BenchmarkDisplayRow } }>> = {
-  Debt: {
+const subCategoryBenchmarkFallbacks: Partial<Record<VrSchemeSubCategory, { dummy: { min: BenchmarkDisplayRow; max: BenchmarkDisplayRow } }>> = {
+  "Dynamic Bond": {
     dummy: {
       max: { annualisedReturn: 0.0785, label: "HDFC Dynamic Bond Fund" },
       min: { annualisedReturn: 0.0615, label: "ICICI Medium Duration Fund" }
     }
   },
-  Equity: {
+  "Medium Duration": {
+    dummy: {
+      max: { annualisedReturn: 0.0785, label: "HDFC Dynamic Bond Fund" },
+      min: { annualisedReturn: 0.0615, label: "ICICI Medium Duration Fund" }
+    }
+  },
+  "Medium to Long Duration": {
+    dummy: {
+      max: { annualisedReturn: 0.0785, label: "HDFC Dynamic Bond Fund" },
+      min: { annualisedReturn: 0.0615, label: "ICICI Medium Duration Fund" }
+    }
+  },
+  Contra: {
     dummy: {
       max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
       min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
     }
   },
-  Hybrid: {
+  ELSS: {
+    dummy: {
+      max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
+      min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
+    }
+  },
+  "Large & MidCap": {
+    dummy: {
+      max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
+      min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
+    }
+  },
+  "Sectoral / Thematic": {
+    dummy: {
+      max: { annualisedReturn: 0.142, label: "Nippon India Large & Mid Cap Fund" },
+      min: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" }
+    }
+  },
+  "Aggressive Hybrid": {
     dummy: {
       max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
       min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
     }
   },
-  "Solution Oriented": {
+  "Conservative Hybrid": {
+    dummy: {
+      max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
+      min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
+    }
+  },
+  "Dynamic Asset Allocation or Balanced Advantage": {
+    dummy: {
+      max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
+      min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
+    }
+  },
+  "Multi Asset Allocation": {
+    dummy: {
+      max: { annualisedReturn: 0.1075, label: "ICICI Balanced Advantage Fund" },
+      min: { annualisedReturn: 0.0735, label: "SBI Conservative Hybrid Fund" }
+    }
+  },
+  "Children's": {
     dummy: {
       max: { annualisedReturn: 0.092, label: "HDFC Retirement Savings Fund" },
       min: { annualisedReturn: 0.0685, label: "Tata Young Citizens Fund" }
     }
   },
-  Others: {
+  Retirement: {
     dummy: {
-      max: { annualisedReturn: 0.084, label: "Motilal Oswal Index Fund" },
-      min: { annualisedReturn: 0.056, label: "Not Specified Fund Sample" }
+      max: { annualisedReturn: 0.092, label: "HDFC Retirement Savings Fund" },
+      min: { annualisedReturn: 0.0685, label: "Tata Young Citizens Fund" }
     }
   },
-  "Index Funds": {
+  "Index Funds / ETFs": {
     dummy: {
       max: { annualisedReturn: 0.089, label: "UTI Nifty Index Fund" },
       min: { annualisedReturn: 0.056, label: "Index Fund Sample" }
     }
   },
-  "Fund of Fund": {
+  "FoFs (Overseas/Domestic)": {
     dummy: {
       max: { annualisedReturn: 0.084, label: "Domestic Fund of Funds Sample" },
       min: { annualisedReturn: 0.0595, label: "International Fund of Funds Sample" }
-    }
-  },
-  "Not Specified": {
-    dummy: {
-      max: { annualisedReturn: 0.084, label: "Not Specified Fund Sample" },
-      min: { annualisedReturn: 0.056, label: "Not Specified Fund Sample" }
     }
   }
 };
@@ -110,11 +153,11 @@ const benchmarkCategoryDefinitions: BenchmarkCategoryDefinition[] = [
     description: "Baseline",
     instrument: "Fixed Deposit"
   },
-  ...kodoSchemeCategories.map((category) => ({
-    label: category,
-    description: describeKodoCategory(category),
-    schemeCategory: category,
-    dummy: categoryBenchmarkFallbacks[category]?.dummy
+  ...vrEnabledTaxonomy.map((entry) => ({
+    label: entry.subCategory,
+    description: entry.category,
+    schemeSubCategory: entry.subCategory,
+    dummy: subCategoryBenchmarkFallbacks[entry.subCategory]?.dummy
   }))
 ];
 
@@ -122,9 +165,9 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const [amountInput, setAmountInput] = useState("1,00,000");
   const [selectedTenure, setSelectedTenure] = useState(30);
   const [customTenure, setCustomTenure] = useState("120");
-  const [selectedBenchmarkCategories, setSelectedBenchmarkCategories] = useState<KodoSchemeCategory[]>(() => [...kodoSchemeCategories]);
+  const [selectedBenchmarkSubCategories, setSelectedBenchmarkSubCategories] = useState<VrSchemeSubCategory[]>(() => [...defaultBenchmarkSubCategories]);
   const [selectedSchemeTypes, setSelectedSchemeTypes] = useState<SchemeTypeOption[]>(() => [...schemeTypeOptions]);
-  const [selectedSchemeSubCategories, setSelectedSchemeSubCategories] = useState<KodoSchemeSubCategory[]>(() => [...allSchemeSubCategoryOptions]);
+  const [selectedSchemeSubCategories, setSelectedSchemeSubCategories] = useState<VrSchemeSubCategory[]>(() => [...allSchemeSubCategoryOptions]);
   const [providerFilter, setProviderFilter] = useState<ProviderFilter>("All");
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
@@ -152,13 +195,13 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
     () => Array.from(new Set(deploymentRows.map((row) => row.provider))).sort(),
     [deploymentRows]
   );
-  const selectedKodoSchemeTypes = useMemo(
-    () => selectedSchemeTypes.filter(isKodoSchemeType),
+  const selectedVrSchemeTypes = useMemo(
+    () => selectedSchemeTypes.filter(isVrSchemeType),
     [selectedSchemeTypes]
   );
   const schemeSubCategoryOptions = useMemo(
-    () => getSubCategoryOptionsForSchemeTypes(selectedKodoSchemeTypes),
-    [selectedKodoSchemeTypes]
+    () => getSubCategoryOptionsForSchemeTypes(selectedVrSchemeTypes),
+    [selectedVrSchemeTypes]
   );
   const filteredRows = useMemo(() => {
     return deploymentRows
@@ -172,11 +215,14 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
   const orderedBenchmarkColumns = useMemo(() => {
     const fixedDepositColumn = benchmarkColumns.find((column) => column.label === "Fixed Deposit");
-    const mutualFundColumns = benchmarkColumns.filter((column) =>
-      column.label !== "Fixed Deposit" && selectedBenchmarkCategories.includes(column.label as KodoSchemeCategory)
-    );
+    const selectedOrder = new Map(selectedBenchmarkSubCategories.map((subCategory, index) => [subCategory, index]));
+    const mutualFundColumns = benchmarkColumns
+      .filter((column) => column.label !== "Fixed Deposit" && selectedOrder.has(column.label as VrSchemeSubCategory))
+      .sort((left, right) =>
+        (selectedOrder.get(left.label as VrSchemeSubCategory) ?? 0) - (selectedOrder.get(right.label as VrSchemeSubCategory) ?? 0)
+      );
     return fixedDepositColumn ? [fixedDepositColumn, ...mutualFundColumns] : benchmarkColumns;
-  }, [benchmarkColumns, selectedBenchmarkCategories]);
+  }, [benchmarkColumns, selectedBenchmarkSubCategories]);
   const benchmarkTableStyle = {
     "--yield-benchmark-table-min-width": `${150 + orderedBenchmarkColumns.length * 220}px`
   } as CSSProperties;
@@ -262,8 +308,8 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const handleSchemeTypeChange = (nextSchemeTypes: SchemeTypeOption[]) => {
     const currentSubCategoryOptions = schemeSubCategoryOptions;
     const allSubCategoriesWereSelected = selectedSchemeSubCategories.length === currentSubCategoryOptions.length;
-    const nextKodoSchemeTypes = nextSchemeTypes.filter(isKodoSchemeType);
-    const nextSubCategoryOptions = getSubCategoryOptionsForSchemeTypes(nextKodoSchemeTypes);
+    const nextVrSchemeTypes = nextSchemeTypes.filter(isVrSchemeType);
+    const nextSubCategoryOptions = getSubCategoryOptionsForSchemeTypes(nextVrSchemeTypes);
     setSelectedSchemeTypes(nextSchemeTypes);
     setSelectedSchemeSubCategories((current) => {
       if (allSubCategoriesWereSelected) return nextSubCategoryOptions;
@@ -316,12 +362,14 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
         <div className="yield-category-summary-heading">
           <h2>Category Benchmarks</h2>
           <MultiSelectMenu
-            label="Category"
-            allLabel="All categories"
-            options={[...kodoSchemeCategories]}
-            selectedValues={selectedBenchmarkCategories}
+            label="Sub-Category"
+            allLabel="All sub-categories"
+            defaultLabel="Default"
+            defaultValues={defaultBenchmarkSubCategories}
+            options={[...allSchemeSubCategoryOptions]}
+            selectedValues={selectedBenchmarkSubCategories}
             getLabel={(value) => value}
-            onChange={setSelectedBenchmarkCategories}
+            onChange={setSelectedBenchmarkSubCategories}
           />
         </div>
         <div className="yield-benchmark-card">
@@ -499,7 +547,7 @@ function buildBenchmarkColumns(rows: YieldComparisonRow[]): BenchmarkColumn[] {
 
 function matchesBenchmarkDefinition(row: YieldComparisonRow, definition: BenchmarkCategoryDefinition) {
   if (definition.instrument) return row.instrument === definition.instrument;
-  if (definition.schemeCategory) return row.schemeCategory === definition.schemeCategory;
+  if (definition.schemeSubCategory) return row.schemeSubCategory === definition.schemeSubCategory;
   return false;
 }
 
@@ -531,6 +579,9 @@ function BenchmarkCell({ className, row }: { className?: string; row?: Benchmark
 function MultiSelectMenu<T extends string>({
   label,
   allLabel,
+  defaultLabel,
+  defaultValues,
+  searchPlaceholder,
   options,
   selectedValues,
   getLabel,
@@ -538,15 +589,23 @@ function MultiSelectMenu<T extends string>({
 }: {
   label: string;
   allLabel: string;
+  defaultLabel?: string;
+  defaultValues?: T[];
+  searchPlaceholder?: string;
   options: T[];
   selectedValues: T[];
   getLabel: (value: T) => string;
   onChange: (value: T[]) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [searchValue, setSearchValue] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
   const allSelected = options.length > 0 && selectedValues.length === options.length;
   const summary = options.length === 0 ? "None" : allSelected ? "All" : selectedValues.length ? `${selectedValues.length} selected` : "None";
+  const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const visibleOptions = normalizedSearchValue
+    ? options.filter((option) => getLabel(option).toLowerCase().includes(normalizedSearchValue))
+    : options;
 
   useEffect(() => {
     if (!open) return;
@@ -555,6 +614,10 @@ function MultiSelectMenu<T extends string>({
     };
     document.addEventListener("mousedown", handlePointerDown);
     return () => document.removeEventListener("mousedown", handlePointerDown);
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) setSearchValue("");
   }, [open]);
 
   const toggleOption = (option: T) => {
@@ -575,8 +638,17 @@ function MultiSelectMenu<T extends string>({
       </button>
       {open && (
         <div className="yield-select-options yield-multi-select-options">
-          {options.length ? (
-            <div className="yield-multi-select-top">
+          <div className="yield-multi-select-top">
+            <label className="yield-multi-select-search">
+              <Search size={15} />
+              <input
+                aria-label={`Search ${label}`}
+                placeholder={searchPlaceholder ?? `Search ${label.toLowerCase()}`}
+                value={searchValue}
+                onChange={(event) => setSearchValue(event.target.value)}
+              />
+            </label>
+            {options.length ? (
               <button
                 type="button"
                 className={allSelected ? "selected" : ""}
@@ -585,13 +657,21 @@ function MultiSelectMenu<T extends string>({
                 <span>{allLabel}</span>
                 {allSelected && <Check size={16} />}
               </button>
-            </div>
-          ) : (
-            null
-          )}
+            ) : null}
+            {defaultLabel && defaultValues?.length ? (
+              <button
+                type="button"
+                className={sameSelection(selectedValues, defaultValues) ? "selected" : ""}
+                onClick={() => onChange([...defaultValues])}
+              >
+                <span>{defaultLabel}</span>
+                {sameSelection(selectedValues, defaultValues) && <Check size={16} />}
+              </button>
+            ) : null}
+          </div>
           <div className="yield-multi-select-list">
-            {options.length ? (
-              options.map((option) => {
+            {visibleOptions.length ? (
+              visibleOptions.map((option) => {
                 const selected = selectedValues.includes(option);
                 return (
                   <button
@@ -605,6 +685,8 @@ function MultiSelectMenu<T extends string>({
                   </button>
                 );
               })
+            ) : normalizedSearchValue ? (
+              <div className="yield-select-empty">No matches found</div>
             ) : (
               <div className="yield-select-empty">No options available</div>
             )}
@@ -624,6 +706,12 @@ function MultiSelectMenu<T extends string>({
       )}
     </div>
   );
+}
+
+function sameSelection<T extends string>(left: T[], right: T[]) {
+  if (left.length !== right.length) return false;
+  const rightValues = new Set(right);
+  return left.every((value) => rightValues.has(value));
 }
 
 function SelectMenu<T extends string>({
@@ -749,18 +837,18 @@ function getRankingAnnualisedReturn(row: YieldComparisonRow) {
 function matchesSchemeFilters(
   row: YieldComparisonRow,
   selectedSchemeTypes: SchemeTypeOption[],
-  selectedSchemeSubCategories: KodoSchemeSubCategory[]
+  selectedSchemeSubCategories: VrSchemeSubCategory[]
 ) {
   if (row.instrument === "Fixed Deposit") {
     return selectedSchemeTypes.includes("Fixed Deposit");
   }
-  const schemeCategory = normalizeKodoCategory(row.schemeCategory);
+  const schemeCategory = normalizeVrCategory(row.schemeCategory);
   if (!schemeCategory || !selectedSchemeTypes.includes(schemeCategory)) return false;
   if (!row.schemeSubCategory) return false;
-  return selectedSchemeSubCategories.includes(row.schemeSubCategory as KodoSchemeSubCategory);
+  return selectedSchemeSubCategories.includes(row.schemeSubCategory as VrSchemeSubCategory);
 }
 
-function isKodoSchemeType(value: SchemeTypeOption): value is KodoSchemeCategory {
+function isVrSchemeType(value: SchemeTypeOption): value is VrSchemeCategory {
   return value !== "Fixed Deposit";
 }
 
@@ -769,8 +857,8 @@ function displaySchemeTypeFilter(value: SchemeTypeOption) {
   return value;
 }
 
-function getSubCategoryOptionsForSchemeTypes(schemeTypes: KodoSchemeCategory[]) {
-  return Array.from(new Set(schemeTypes.flatMap((schemeType) => getKodoSubCategories(schemeType) as KodoSchemeSubCategory[])))
+function getSubCategoryOptionsForSchemeTypes(schemeTypes: VrSchemeCategory[]) {
+  return Array.from(new Set(schemeTypes.flatMap((schemeType) => getVrSubCategories(schemeType) as VrSchemeSubCategory[])))
     .sort((a, b) => a.localeCompare(b));
 }
 

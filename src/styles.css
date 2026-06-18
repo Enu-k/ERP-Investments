@@ -1496,6 +1496,29 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-multi-select-top {
   border-bottom: 1px solid var(--border);
 }
+.yield-multi-select-search {
+  height: 46px;
+  margin: 10px 12px;
+  padding: 0 12px;
+  border: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fff;
+  color: #6b7280;
+}
+.yield-multi-select-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #111827;
+  font: inherit;
+}
+.yield-multi-select-search input::placeholder {
+  color: #8a8f98;
+}
 .yield-multi-select-list {
   flex: 1 1 auto;
   min-height: 0;

@@ -10,7 +10,7 @@ import type {
   YieldComparisonRow,
   YieldScenario
 } from "../types/yield";
-import { inferSchemeTaxonomy } from "./kodoTaxonomy";
+import { inferSchemeTaxonomy } from "./vrTaxonomy";
 
 export const tenureOptions: TenureOption[] = [
   { label: "7 days", days: 7 },
