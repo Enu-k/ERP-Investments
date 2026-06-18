@@ -1488,6 +1488,13 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
 .yield-select-options button.selected {
   background: #fbfbfc;
 }
+.yield-select-options button.disabled {
+  color: #9ca3af;
+  cursor: not-allowed;
+}
+.yield-select-options button.disabled:hover {
+  background: transparent;
+}
 .yield-multi-select-top,
 .yield-multi-select-footer {
   flex: 0 0 auto;
@@ -1523,6 +1530,15 @@ input[type="checkbox"] { width: 18px; height: 18px; accent-color: #2f66f3; }
   flex: 1 1 auto;
   min-height: 0;
   overflow: auto;
+}
+.yield-multi-select-helper {
+  flex: 0 0 auto;
+  padding: 9px 18px;
+  border-top: 1px solid var(--border);
+  color: #7c2d12;
+  background: #fff7ed;
+  font-size: 12px;
+  line-height: 1.35;
 }
 .yield-multi-select-footer {
   border-top: 1px solid var(--border);

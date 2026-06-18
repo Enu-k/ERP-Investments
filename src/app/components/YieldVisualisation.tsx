@@ -22,12 +22,8 @@ import {
   type MfRatesSyncStatus
 } from "../data/mfRatesApi";
 import {
-  getVrSubCategories,
   inferSchemeTaxonomy,
-  normalizeVrCategory,
   vrEnabledTaxonomy,
-  vrSchemeCategories,
-  type VrSchemeCategory,
   type VrSchemeSubCategory
 } from "../data/vrTaxonomy";
 import type { InstrumentType, YieldComparisonRow } from "../types/yield";
@@ -37,8 +33,7 @@ const methodologyCopy =
   "Mutual fund estimates are calculated using historical rolling NAV returns for the selected tenure. Conservative, balanced, and aggressive estimates represent the 25th, 50th, and 75th percentile historical outcomes. Actual returns may vary.";
 
 type SortOrder = "desc" | "asc";
-type SchemeTypeOption = "Fixed Deposit" | VrSchemeCategory;
-type ProviderFilter = "All" | string;
+type CategoryOption = "Fixed Deposit" | VrSchemeSubCategory;
 interface BenchmarkCategoryDefinition {
   label: string;
   description: string;
@@ -50,9 +45,11 @@ interface BenchmarkCategoryDefinition {
   };
 }
 
-const schemeTypeOptions: SchemeTypeOption[] = ["Fixed Deposit", ...vrSchemeCategories];
-const allSchemeSubCategoryOptions = getVrSubCategories("All") as VrSchemeSubCategory[];
-const defaultBenchmarkSubCategories: VrSchemeSubCategory[] = ["Liquid", "Overnight", "Money Market"];
+const fixedDepositCategory = "Fixed Deposit" as const;
+const mutualFundCategoryOptions = vrEnabledTaxonomy.map((entry) => entry.subCategory) as VrSchemeSubCategory[];
+const categoryOptions: CategoryOption[] = [fixedDepositCategory, ...mutualFundCategoryOptions];
+const defaultBenchmarkCategories: CategoryOption[] = [fixedDepositCategory, "Liquid", "Overnight", "Money Market"];
+const defaultDeploymentCategories: CategoryOption[] = [...categoryOptions];
 
 const subCategoryBenchmarkFallbacks: Partial<Record<VrSchemeSubCategory, { dummy: { min: BenchmarkDisplayRow; max: BenchmarkDisplayRow } }>> = {
   "Dynamic Bond": {
@@ -165,10 +162,8 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
   const [amountInput, setAmountInput] = useState("1,00,000");
   const [selectedTenure, setSelectedTenure] = useState(30);
   const [customTenure, setCustomTenure] = useState("120");
-  const [selectedBenchmarkSubCategories, setSelectedBenchmarkSubCategories] = useState<VrSchemeSubCategory[]>(() => [...defaultBenchmarkSubCategories]);
-  const [selectedSchemeTypes, setSelectedSchemeTypes] = useState<SchemeTypeOption[]>(() => [...schemeTypeOptions]);
-  const [selectedSchemeSubCategories, setSelectedSchemeSubCategories] = useState<VrSchemeSubCategory[]>(() => [...allSchemeSubCategoryOptions]);
-  const [providerFilter, setProviderFilter] = useState<ProviderFilter>("All");
+  const [selectedBenchmarkCategories, setSelectedBenchmarkCategories] = useState<CategoryOption[]>(() => [...defaultBenchmarkCategories]);
+  const [selectedDeploymentCategories, setSelectedDeploymentCategories] = useState<CategoryOption[]>(() => [...defaultDeploymentCategories]);
   const [sortOrder, setSortOrder] = useState<SortOrder>("desc");
   const [page, setPage] = useState(1);
   const [activeRow, setActiveRow] = useState<YieldComparisonRow | null>(null);
@@ -191,59 +186,32 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
     () => [...mfRows, ...fdRows].filter((row) => row.available),
     [mfRows, fdRows]
   );
-  const providerOptions = useMemo(
-    () => Array.from(new Set(deploymentRows.map((row) => row.provider))).sort(),
-    [deploymentRows]
-  );
-  const selectedVrSchemeTypes = useMemo(
-    () => selectedSchemeTypes.filter(isVrSchemeType),
-    [selectedSchemeTypes]
-  );
-  const schemeSubCategoryOptions = useMemo(
-    () => getSubCategoryOptionsForSchemeTypes(selectedVrSchemeTypes),
-    [selectedVrSchemeTypes]
-  );
   const filteredRows = useMemo(() => {
     return deploymentRows
-      .filter((row) => matchesSchemeFilters(row, selectedSchemeTypes, selectedSchemeSubCategories))
-      .filter((row) => providerFilter === "All" || row.provider === providerFilter)
+      .filter((row) => matchesCategoryFilter(row, selectedDeploymentCategories))
       .sort((a, b) => sortDeploymentRows(a, b, sortOrder));
-  }, [deploymentRows, selectedSchemeTypes, selectedSchemeSubCategories, providerFilter, sortOrder]);
+  }, [deploymentRows, selectedDeploymentCategories, sortOrder]);
   const pageSize = 10;
   const totalPages = Math.max(1, Math.ceil(filteredRows.length / pageSize));
   const pageRows = filteredRows.slice((page - 1) * pageSize, page * pageSize);
   const benchmarkColumns = useMemo(() => buildBenchmarkColumns(deploymentRows), [deploymentRows]);
   const orderedBenchmarkColumns = useMemo(() => {
-    const fixedDepositColumn = benchmarkColumns.find((column) => column.label === "Fixed Deposit");
-    const selectedOrder = new Map(selectedBenchmarkSubCategories.map((subCategory, index) => [subCategory, index]));
-    const mutualFundColumns = benchmarkColumns
-      .filter((column) => column.label !== "Fixed Deposit" && selectedOrder.has(column.label as VrSchemeSubCategory))
-      .sort((left, right) =>
-        (selectedOrder.get(left.label as VrSchemeSubCategory) ?? 0) - (selectedOrder.get(right.label as VrSchemeSubCategory) ?? 0)
-      );
-    return fixedDepositColumn ? [fixedDepositColumn, ...mutualFundColumns] : benchmarkColumns;
-  }, [benchmarkColumns, selectedBenchmarkSubCategories]);
+    const selectedOrder = new Map(selectedBenchmarkCategories.map((category, index) => [category, index]));
+    return benchmarkColumns
+      .filter((column) => selectedOrder.has(column.label as CategoryOption))
+      .sort((left, right) => {
+        if (left.label === fixedDepositCategory) return -1;
+        if (right.label === fixedDepositCategory) return 1;
+        return (selectedOrder.get(left.label as CategoryOption) ?? 0) - (selectedOrder.get(right.label as CategoryOption) ?? 0);
+      });
+  }, [benchmarkColumns, selectedBenchmarkCategories]);
   const benchmarkTableStyle = {
     "--yield-benchmark-table-min-width": `${150 + orderedBenchmarkColumns.length * 220}px`
   } as CSSProperties;
 
   useEffect(() => {
     setPage(1);
-  }, [selectedSchemeTypes, selectedSchemeSubCategories, providerFilter, sortOrder, amountInput, selectedTenure, customTenure]);
-
-  useEffect(() => {
-    if (providerFilter !== "All" && !providerOptions.includes(providerFilter)) {
-      setProviderFilter("All");
-    }
-  }, [providerFilter, providerOptions]);
-
-  useEffect(() => {
-    const validSubCategories = new Set(schemeSubCategoryOptions);
-    const nextSelectedSubCategories = selectedSchemeSubCategories.filter((subCategory) => validSubCategories.has(subCategory));
-    if (nextSelectedSubCategories.length !== selectedSchemeSubCategories.length) {
-      setSelectedSchemeSubCategories(nextSelectedSubCategories);
-    }
-  }, [selectedSchemeSubCategories, schemeSubCategoryOptions]);
+  }, [selectedDeploymentCategories, sortOrder, amountInput, selectedTenure, customTenure]);
 
   const loadLiveFdRows = useCallback(async () => {
     if (!hasFdRatesApi()) return;
@@ -305,19 +273,6 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
     await Promise.allSettled([loadLiveFdRows(), loadLiveMfRows()]);
   };
 
-  const handleSchemeTypeChange = (nextSchemeTypes: SchemeTypeOption[]) => {
-    const currentSubCategoryOptions = schemeSubCategoryOptions;
-    const allSubCategoriesWereSelected = selectedSchemeSubCategories.length === currentSubCategoryOptions.length;
-    const nextVrSchemeTypes = nextSchemeTypes.filter(isVrSchemeType);
-    const nextSubCategoryOptions = getSubCategoryOptionsForSchemeTypes(nextVrSchemeTypes);
-    setSelectedSchemeTypes(nextSchemeTypes);
-    setSelectedSchemeSubCategories((current) => {
-      if (allSubCategoriesWereSelected) return nextSubCategoryOptions;
-      const validNextSubCategories = new Set(nextSubCategoryOptions);
-      return current.filter((subCategory) => validNextSubCategories.has(subCategory));
-    });
-  };
-
   return (
     <div className="yield-final-page">
       <header className="yield-final-hero">
@@ -362,14 +317,17 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
         <div className="yield-category-summary-heading">
           <h2>Category Benchmarks</h2>
           <MultiSelectMenu
-            label="Sub-Category"
-            allLabel="All sub-categories"
+            label="Category"
+            allLabel="All categories"
             defaultLabel="Default"
-            defaultValues={defaultBenchmarkSubCategories}
-            options={[...allSchemeSubCategoryOptions]}
-            selectedValues={selectedBenchmarkSubCategories}
-            getLabel={(value) => value}
-            onChange={setSelectedBenchmarkSubCategories}
+            defaultValues={defaultBenchmarkCategories}
+            fixedFirstOptions={[fixedDepositCategory]}
+            limitMessage="Select up to 6 categories"
+            maxSelected={6}
+            options={categoryOptions}
+            selectedValues={selectedBenchmarkCategories}
+            getLabel={displayCategoryOption}
+            onChange={setSelectedBenchmarkCategories}
           />
         </div>
         <div className="yield-benchmark-card">
@@ -419,27 +377,13 @@ export function YieldVisualisation({ onBack }: { onBack?: () => void }) {
           <h2>{String(filteredRows.length).padStart(2, "0")} deployment options</h2>
           <div className="yield-final-filters">
             <MultiSelectMenu
-              label="Scheme type"
-              allLabel="All scheme types"
-              options={schemeTypeOptions}
-              selectedValues={selectedSchemeTypes}
-              getLabel={displaySchemeTypeFilter}
-              onChange={handleSchemeTypeChange}
-            />
-            <MultiSelectMenu
-              label="Scheme Sub-Category"
-              allLabel="All sub-categories"
-              options={schemeSubCategoryOptions}
-              selectedValues={selectedSchemeSubCategories}
-              getLabel={(value) => value}
-              onChange={setSelectedSchemeSubCategories}
-            />
-            <SelectMenu
-              label="AMC"
-              value={providerFilter}
-              options={["All", ...providerOptions]}
-              getLabel={(value) => value}
-              onChange={(value) => setProviderFilter(value)}
+              label="Category"
+              allLabel="All categories"
+              fixedFirstOptions={[fixedDepositCategory]}
+              options={categoryOptions}
+              selectedValues={selectedDeploymentCategories}
+              getLabel={displayCategoryOption}
+              onChange={setSelectedDeploymentCategories}
             />
           </div>
         </div>
@@ -581,6 +525,9 @@ function MultiSelectMenu<T extends string>({
   allLabel,
   defaultLabel,
   defaultValues,
+  fixedFirstOptions,
+  limitMessage,
+  maxSelected,
   searchPlaceholder,
   options,
   selectedValues,
@@ -591,6 +538,9 @@ function MultiSelectMenu<T extends string>({
   allLabel: string;
   defaultLabel?: string;
   defaultValues?: T[];
+  fixedFirstOptions?: T[];
+  limitMessage?: string;
+  maxSelected?: number;
   searchPlaceholder?: string;
   options: T[];
   selectedValues: T[];
@@ -603,9 +553,13 @@ function MultiSelectMenu<T extends string>({
   const allSelected = options.length > 0 && selectedValues.length === options.length;
   const summary = options.length === 0 ? "None" : allSelected ? "All" : selectedValues.length ? `${selectedValues.length} selected` : "None";
   const normalizedSearchValue = searchValue.trim().toLowerCase();
+  const displayOptions = orderedOptions(options, fixedFirstOptions);
+  const fixedValues = new Set(fixedFirstOptions ?? []);
   const visibleOptions = normalizedSearchValue
-    ? options.filter((option) => getLabel(option).toLowerCase().includes(normalizedSearchValue))
-    : options;
+    ? displayOptions.filter((option) => fixedValues.has(option) || getLabel(option).toLowerCase().includes(normalizedSearchValue))
+    : displayOptions;
+  const selectedLimitReached = maxSelected !== undefined && selectedValues.length >= maxSelected;
+  const helperMessage = selectedLimitReached && limitMessage ? limitMessage : undefined;
 
   useEffect(() => {
     if (!open) return;
@@ -621,6 +575,7 @@ function MultiSelectMenu<T extends string>({
   }, [open]);
 
   const toggleOption = (option: T) => {
+    if (!selectedValues.includes(option) && selectedLimitReached) return;
     const nextValues = selectedValues.includes(option)
       ? selectedValues.filter((value) => value !== option)
       : [...selectedValues, option];
@@ -652,7 +607,7 @@ function MultiSelectMenu<T extends string>({
               <button
                 type="button"
                 className={allSelected ? "selected" : ""}
-                onClick={() => onChange([...options])}
+                onClick={() => onChange(maxSelected ? displayOptions.slice(0, maxSelected) : [...displayOptions])}
               >
                 <span>{allLabel}</span>
                 {allSelected && <Check size={16} />}
@@ -673,11 +628,13 @@ function MultiSelectMenu<T extends string>({
             {visibleOptions.length ? (
               visibleOptions.map((option) => {
                 const selected = selectedValues.includes(option);
+                const disabled = !selected && selectedLimitReached;
                 return (
                   <button
                     key={option}
                     type="button"
-                    className={selected ? "selected" : ""}
+                    aria-disabled={disabled}
+                    className={`${selected ? "selected" : ""}${disabled ? " disabled" : ""}`}
                     onClick={() => toggleOption(option)}
                   >
                     <span>{getLabel(option)}</span>
@@ -691,6 +648,7 @@ function MultiSelectMenu<T extends string>({
               <div className="yield-select-empty">No options available</div>
             )}
           </div>
+          {helperMessage && <div className="yield-multi-select-helper">{helperMessage}</div>}
           {options.length > 0 && (
             <div className="yield-multi-select-footer">
               <button
@@ -714,57 +672,13 @@ function sameSelection<T extends string>(left: T[], right: T[]) {
   return left.every((value) => rightValues.has(value));
 }
 
-function SelectMenu<T extends string>({
-  label,
-  value,
-  options,
-  getLabel,
-  onChange
-}: {
-  label: string;
-  value: T;
-  options: T[];
-  getLabel: (value: T) => string;
-  onChange: (value: T) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      if (!menuRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", handlePointerDown);
-    return () => document.removeEventListener("mousedown", handlePointerDown);
-  }, [open]);
-
-  return (
-    <div className="yield-select-menu" ref={menuRef}>
-      <button type="button" onClick={() => setOpen((current) => !current)}>
-        {label}
-        <ChevronDown size={16} />
-      </button>
-      {open && (
-        <div className="yield-select-options">
-          {options.map((option) => (
-            <button
-              key={option}
-              type="button"
-              className={option === value ? "selected" : ""}
-              onClick={() => {
-                onChange(option);
-                setOpen(false);
-              }}
-            >
-              <span>{getLabel(option)}</span>
-              {option === value && <Check size={16} />}
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function orderedOptions<T extends string>(options: T[], fixedFirstOptions?: T[]) {
+  if (!fixedFirstOptions?.length) return options;
+  const fixedValues = new Set(fixedFirstOptions);
+  return [
+    ...fixedFirstOptions.filter((option) => options.includes(option)),
+    ...options.filter((option) => !fixedValues.has(option))
+  ];
 }
 
 export function ExploreFunds({ onCompareYield }: { onCompareYield: () => void }) {
@@ -834,32 +748,17 @@ function getRankingAnnualisedReturn(row: YieldComparisonRow) {
   return row.annualisedReturn ?? 0;
 }
 
-function matchesSchemeFilters(
-  row: YieldComparisonRow,
-  selectedSchemeTypes: SchemeTypeOption[],
-  selectedSchemeSubCategories: VrSchemeSubCategory[]
-) {
+function matchesCategoryFilter(row: YieldComparisonRow, selectedCategories: CategoryOption[]) {
   if (row.instrument === "Fixed Deposit") {
-    return selectedSchemeTypes.includes("Fixed Deposit");
+    return selectedCategories.includes(fixedDepositCategory);
   }
-  const schemeCategory = normalizeVrCategory(row.schemeCategory);
-  if (!schemeCategory || !selectedSchemeTypes.includes(schemeCategory)) return false;
   if (!row.schemeSubCategory) return false;
-  return selectedSchemeSubCategories.includes(row.schemeSubCategory as VrSchemeSubCategory);
+  return selectedCategories.includes(row.schemeSubCategory as VrSchemeSubCategory);
 }
 
-function isVrSchemeType(value: SchemeTypeOption): value is VrSchemeCategory {
-  return value !== "Fixed Deposit";
-}
-
-function displaySchemeTypeFilter(value: SchemeTypeOption) {
+function displayCategoryOption(value: CategoryOption) {
   if (value === "Fixed Deposit") return "Fixed deposit";
   return value;
-}
-
-function getSubCategoryOptionsForSchemeTypes(schemeTypes: VrSchemeCategory[]) {
-  return Array.from(new Set(schemeTypes.flatMap((schemeType) => getVrSubCategories(schemeType) as VrSchemeSubCategory[])))
-    .sort((a, b) => a.localeCompare(b));
 }
 
 function mapApiFdRow(row: FdRateApiRow, principal: number, tenureDays: number): YieldComparisonRow {
